@@ -1,133 +1,218 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 [ExecuteAlways]
 public class ElementPanel : UIBehaviour
 {
-	[SerializeField] RectTransform m_Content;
-
-	[SerializeField] float m_Width;
-
-	List<ElementContainer>            m_Containers = new List<ElementContainer>();
-
-	public void Swap(int _SourcePosition, int _TargetPosition)
+	RectTransform RectTransform
 	{
-		
+		get
+		{
+			if (m_RectTransform == null)
+				m_RectTransform = GetComponent<RectTransform>();
+			return m_RectTransform;
+		}
 	}
 
-	public void Reposition()
-	{
-		
-	}
+	[SerializeField] float          m_Size;
+	[SerializeField] float          m_Spacing;
+	[SerializeField] float          m_Duration;
+	[SerializeField] AnimationCurve m_Curve;
 
-	public void Normalize()
-	{
-		
-	}
+	RectTransform m_RectTransform;
 
-	void Awake()
+	[SerializeField] List<ElementContainer> m_Containers = new List<ElementContainer>();
+
+	protected override void Awake()
 	{
+		base.Awake();
+		
 		CollectContainers();
+		
+		Reposition();
 	}
 
-	void OnEnable()
+	protected override void OnEnable()
 	{
+		base.OnEnable();
+		
 		CollectContainers();
+		
+		Reposition();
 	}
 
 	void OnTransformChildrenChanged()
 	{
 		CollectContainers();
+		
+		Reposition();
 	}
+
+	#if UNITY_EDITOR
+	protected override void OnValidate()
+	{
+		base.OnValidate();
+		
+		UnityEditor.EditorApplication.delayCall += Reposition;
+	}
+	#endif
 
 	void CollectContainers()
 	{
-		m_Containers.Clear();
+		for (int i = m_Containers.Count - 1; i >= 0; i--)
+		{
+			ElementContainer container = m_Containers[i];
+			
+			if (container == null || container.transform.parent != transform)
+				m_Containers.RemoveAt(i);
+		}
+		
+		HashSet<ElementContainer> containers = new HashSet<ElementContainer>(m_Containers);
 		
 		for (int i = 0; i < transform.childCount; i++)
 		{
-			ElementContainer child = transform.GetChild(i).GetComponent<ElementContainer>();;
+			ElementContainer container = transform.GetChild(i).GetComponent<ElementContainer>();;
 			
-			if (child == null || !child.gameObject.activeSelf)
+			container.Setup(this);
+			
+			if (containers.Contains(container) || container == null || !container.gameObject.activeSelf)
 				continue;
 			
-			child.Setup(this);
-			
-			m_Containers.Add(child);
+			m_Containers.Add(container);
 		}
-		
-		Normalize();
-		
-		ProcessLayout();
 	}
 
-	public void Remap(ElementContainer _Element)
+	public bool Replace(ElementContainer _Container)
 	{
-		foreach (var element in m_Containers)
-		{
-			if (element != _Element && element.Position >= _Element.Position)
-				element.Position++;
-		}
+		if (_Container == null)
+			return false;
 		
-		m_Containers.Sort((_A, _B) => _A.Position.CompareTo(_B.Position));
+		int position = m_Containers.IndexOf(_Container);
 		
+		if (position < 0)
+			return false;
+		
+		m_Containers.RemoveAt(position);
+		
+		Rect source = _Container.rectTransform.rect;
+		source = new Rect(
+			_Container.transform.TransformPoint(source.position),
+			_Container.transform.TransformVector(source.size)
+		);
+		
+		float minDistance = float.MaxValue;
+		int index = 0;
 		for (int i = 0; i < m_Containers.Count; i++)
 		{
-			m_Containers[i].Position = i;
+			ElementContainer container = m_Containers[i];
+			
+			if (container == null)
+				continue;
+			
+			Rect target = container.GetPixelAdjustedRect();
+			target = new Rect(
+				container.transform.TransformPoint(target.position),
+				container.transform.TransformVector(target.size)
+			);
+			
+			// Check left side
+			float leftDistance = Mathf.Abs(source.center.x - target.xMin);
+			if (minDistance > leftDistance)
+			{
+				minDistance = leftDistance;
+				index       = i;
+			}
+			
+			// Check right side
+			float rightDistance = Mathf.Abs(source.center.x - target.xMax);
+			if (minDistance > rightDistance)
+			{
+				minDistance = rightDistance;
+				index       = i + 1;
+			}
 		}
+		
+		m_Containers.Insert(index, _Container);
+		
+		return position != index;
+	}
+
+	public void Move(ElementContainer _Container, int _Position)
+	{
+		if (_Container == null)
+			return;
+		
+		_Position = Mathf.Clamp(_Position, 0, m_Containers.Count - 1);
+		
+		int position = m_Containers.IndexOf(_Container);
+		
+		if (position < 0 || position == _Position)
+			return;
+		
+		m_Containers.RemoveAt(position);
+		m_Containers.Insert(_Position, _Container);
 	}
 
 	public void Reposition()
 	{
-		m_Containers.Sort((_A, _B) => _A.Position.CompareTo(_B.Position));
+		if (IsDestroyed())
+			return;
 		
-		ProcessLayout();
-	}
-
-	void ProcessLayout()
-	{
 		StopAllCoroutines();
 		
-		const float spacing = 5;
+		int count = m_Containers.Count(_Container => !_Container.Drag);
 		
-		float position = 0;
+		float totalSize = count * (m_Size + m_Spacing) - m_Spacing;
 		
-		for (int i = 0; i < m_Containers.Count; i++)
+		float position = -totalSize * 0.5f;
+		
+		foreach (ElementContainer container in m_Containers)
 		{
-			ElementContainer child = m_Containers[i];
-			
-			if (child == null)
+			if (container == null || container.IgnoreLayout)
 				continue;
 			
-			child.rectTransform.anchorMin = new Vector2(0, 0);
-			child.rectTransform.anchorMax = new Vector2(0, 1);
-			child.rectTransform.sizeDelta = new Vector2(160, 0);
+			RectTransform rectTransform = container.rectTransform;
 			
-			Vector2 pos = child.rectTransform.anchoredPosition;
-			Vector2 size   = child.rectTransform.sizeDelta;
-			Vector2 offset = Vector2.Scale(size, child.rectTransform.pivot);
+			if (rectTransform == null)
+				continue;
 			
-			pos = new Vector2(offset.x + position, offset.y);
+			rectTransform.anchorMin = new Vector2(0.5f, 0);
+			rectTransform.anchorMax = new Vector2(0.5f, 1);
+			rectTransform.pivot     = new Vector2(0.5f, 0.5f);
+			rectTransform.sizeDelta = new Vector2(m_Size, 0);
 			
-			if (Application.isPlaying && gameObject.activeInHierarchy)
-				StartCoroutine(LayoutRoutine(child.rectTransform, pos));
-			else
-				child.rectTransform.anchoredPosition = pos;
+			if (container.Drag)
+				continue;
 			
-			position += size.x + spacing;
+			SetPosition(rectTransform, new Vector2(position + m_Size * 0.5f, 0));
+			
+			position += m_Size + m_Spacing;
 		}
 		
-		RectTransform rectTransform = transform as RectTransform;
-		rectTransform.anchorMin = new Vector2(0.5f, 0);
-		rectTransform.anchorMax = new Vector2(0.5f, 1);
-		rectTransform.pivot     = new Vector2(0.5f, 0.5f);
+		RectTransform.anchorMin = new Vector2(0.5f, 0);
+		RectTransform.anchorMax = new Vector2(0.5f, 1);
+		RectTransform.pivot     = new Vector2(0.5f, 0.5f);
 		
+		SetSize(RectTransform, new Vector2(totalSize, RectTransform.sizeDelta.y));
+	}
+
+	void SetSize(RectTransform _Target, Vector2 _Size)
+	{
 		if (Application.isPlaying && gameObject.activeInHierarchy)
-			StartCoroutine(SizeRoutine(rectTransform, new Vector2(position - spacing, 0)));
-		else
-			rectTransform.sizeDelta = new Vector2(position - spacing, 0);
+			StartCoroutine(SizeRoutine(_Target, _Size));
+		else if (_Target != null)
+			_Target.sizeDelta = _Size;
+	}
+
+	void SetPosition(RectTransform _Target, Vector2 _Position)
+	{
+		if (Application.isPlaying && gameObject.activeInHierarchy)
+			StartCoroutine(PositionRoutine(_Target, _Position));
+		else if (_Target != null)
+			_Target.anchoredPosition = _Position;
 	}
 
 	IEnumerator SizeRoutine(RectTransform _Target, Vector2 _Size)
@@ -138,22 +223,22 @@ public class ElementPanel : UIBehaviour
 		if (source == target)
 			yield break;
 		
-		const float duration = 0.5f;
-		
 		float time = 0;
-		while (time < duration)
+		while (time < m_Duration)
 		{
 			yield return null;
 			
 			time += Time.deltaTime;
 			
-			_Target.sizeDelta = Vector2.Lerp(source, target, time / duration);
+			float phase = m_Curve.Evaluate(time / m_Duration);
+			
+			_Target.sizeDelta = Vector2.Lerp(source, target, phase);
 		}
 		
 		_Target.sizeDelta = target;
 	}
 
-	IEnumerator LayoutRoutine(RectTransform _Target, Vector2 _Position)
+	IEnumerator PositionRoutine(RectTransform _Target, Vector2 _Position)
 	{
 		Vector2 source = _Target.anchoredPosition;
 		Vector2 target = _Position;
@@ -161,16 +246,16 @@ public class ElementPanel : UIBehaviour
 		if (source == target)
 			yield break;
 		
-		const float duration = 0.5f;
-		
 		float time = 0;
-		while (time < duration)
+		while (time < m_Duration)
 		{
 			yield return null;
 			
 			time += Time.deltaTime;
 			
-			_Target.anchoredPosition = Vector2.Lerp(source, target, time / duration);
+			float phase = m_Curve.Evaluate(time / m_Duration);
+			
+			_Target.anchoredPosition = Vector2.Lerp(source, target, phase);
 		}
 		
 		_Target.anchoredPosition = target;

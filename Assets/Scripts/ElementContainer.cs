@@ -1,87 +1,80 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.Playables;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Tilemaps;
 
 public class ElementContainer : UIEventReceiver, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-	public TileBase Tile { get; set; }
+	public bool IgnoreLayout { get; protected set; }
 
-	public int Position
-	{
-		get { return m_Position; }
-		set { m_Position = value; }
-	}
-
-	[SerializeField] int m_Position;
+	public bool Drag { get; protected set; }
 
 	ElementPanel m_Panel;
-	Transform    m_Parent;
-
-	bool m_Drag;
-
-	protected override void OnValidate()
-	{
-		base.OnValidate();
-		
-		if (m_Panel != null)
-			m_Panel.Reposition();
-	}
 
 	public void Setup(ElementPanel _Panel)
 	{
 		m_Panel = _Panel;
 	}
 
-	public void ToFront()
+	public void BringToFront()
 	{
-		m_Position = 0;
+		transform.SetAsLastSibling();
+	}
+
+	public void BringToBack()
+	{
+		transform.SetAsFirstSibling();
+	}
+
+	public void OnBeginDrag(PointerEventData _Event)
+	{
+		if (m_Panel == null || Drag || Mathf.Abs(_Event.delta.x) > Mathf.Abs(_Event.delta.y))
+		{
+			PassEvent(_Event, ExecuteEvents.beginDragHandler);
+			return;
+		}
+		
+		Drag         = true;
+		IgnoreLayout = true;
+		
+		rectTransform.anchoredPosition += GetPosition(_Event.delta);
+		
+		BringToFront();
+		
+		if (m_Panel != null)
+			m_Panel.Reposition();
+		
+		_Event.Use();
+	}
+
+	public void OnDrag(PointerEventData _Event)
+	{
+		if (!Drag)
+		{
+			PassEvent(_Event, ExecuteEvents.dragHandler);
+			return;
+		}
+		
+		rectTransform.anchoredPosition += GetPosition(_Event.delta);
+		
+		_Event.Use();
+	}
+
+	public void OnEndDrag(PointerEventData _Event)
+	{
+		if (!Drag)
+		{
+			PassEvent(_Event, ExecuteEvents.endDragHandler);
+			return;
+		}
+		
+		Drag         = false;
+		IgnoreLayout = false;
 		
 		if (m_Panel != null)
 		{
-			m_Panel.Remap(this);
+			m_Panel.Replace(this);
 			m_Panel.Reposition();
 		}
-	}
-
-	public void OnBeginDrag(PointerEventData _Data)
-	{
-		if (m_Drag || Mathf.Abs(_Data.delta.x) > Mathf.Abs(_Data.delta.y))
-			return;
 		
-		m_Drag = true;
-		rectTransform.GetSiblingIndex();
-		m_Parent = rectTransform.parent;
-		
-		rectTransform.SetParent(rectTransform.parent.parent, true);
-		
-		_Data.Use();
-	}
-
-	public void OnDrag(PointerEventData _Data)
-	{
-		if (!m_Drag)
-			return;
-		
-		Vector2 delta = _Data.delta;
-		
-		delta = GetPosition(delta);
-		
-		rectTransform.anchoredPosition += delta;
-		
-		_Data.Use();
-	}
-
-	public void OnEndDrag(PointerEventData _Data)
-	{
-		if (!m_Drag)
-			return;
-		
-		m_Drag = false;
-		
-		rectTransform.SetParent(m_Parent, true);
-		rectTransform.SetAsLastSibling();
+		_Event.Use();
 	}
 }
