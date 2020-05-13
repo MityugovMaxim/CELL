@@ -5,6 +5,16 @@ using UnityEngine.UI;
 
 public class UIEventReceiver : Graphic
 {
+	public override Material material
+	{
+		get { return null; }
+	}
+
+	public override Color color
+	{
+		get { return Color.clear; }
+	}
+
 	static readonly List<RaycastResult> m_RaycastResults = new List<RaycastResult>();
 
 	bool m_Destroying;
@@ -28,26 +38,48 @@ public class UIEventReceiver : Graphic
 
 	public Rect GetLocalRect()
 	{
-		return GetPixelAdjustedRect();
+		return rectTransform.rect;
 	}
 
 	public Rect GetWorldRect()
 	{
-		Rect rect = GetPixelAdjustedRect();
-		return new Rect(
-			rectTransform.TransformPoint(rect.position),
-			rectTransform.TransformVector(rect.size)
-		);
+		return rectTransform.TransformRect(rectTransform.rect);
 	}
 
-	protected Vector2 GetLocalPosition(Vector2 _Position)
+	public bool Intersect(RectTransform _Target)
 	{
-		return transform.InverseTransformVector(_Position);
+		if (_Target == null)
+			return false;
+		
+		Rect source = GetWorldRect();
+		Rect target = _Target.TransformRect(_Target.rect);
+		
+		return source.Overlaps(target);
 	}
 
-	protected Vector2 GetWorldPosition(Vector2 _Position)
+	protected Vector2 GetDelta(PointerEventData _Event)
 	{
-		return transform.TransformVector(_Position);
+		return GetDelta(_Event.pressEventCamera, _Event);
+	}
+
+	protected Vector2 GetDelta(Camera _Camera, PointerEventData _Event)
+	{
+		Vector2 source = _Camera.ScreenToWorldPoint(_Event.position - _Event.delta);
+		Vector2 target = _Camera.ScreenToWorldPoint(_Event.position);
+		source = rectTransform.InverseTransformPoint(source);
+		target = rectTransform.InverseTransformPoint(target);
+		return target - source;
+	}
+
+	protected Vector2 GetPosition(PointerEventData _Event)
+	{
+		return GetPosition(_Event.pressEventCamera, _Event);
+	}
+
+	protected Vector2 GetPosition(Camera _Camera, PointerEventData _Event)
+	{
+		Vector2 position = _Camera.ScreenToWorldPoint(_Event.position);
+		return rectTransform.InverseTransformPoint(position);
 	}
 
 	protected void PassEvent<T>(PointerEventData _Event, ExecuteEvents.EventFunction<T> _Function) where T : IEventSystemHandler

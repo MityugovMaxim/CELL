@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class ElementContainer : UIEventReceiver, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler
+public abstract class ElementContainer : UIEventReceiver, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerDownHandler
 {
 	public static ElementContainer Create(ElementPanel _Panel, int _Axis)
 	{
@@ -26,21 +26,23 @@ public class ElementContainer : UIEventReceiver, IBeginDragHandler, IDragHandler
 		}
 	}
 
-	protected bool Drag { get; set; }
+	protected bool Drag { get; private set; }
+
+	protected ElementPanel Panel { get; private set; }
+
+	protected int Axis { get; private set; }
 
 	[SerializeField] float          m_MoveDuration = 0.5f;
 	[SerializeField] AnimationCurve m_MoveCurve    = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
 	[NonSerialized] ScrollRect   m_ScrollRect;
-	[NonSerialized] ElementPanel m_Panel;
-	[NonSerialized] int          m_Axis;
 	[NonSerialized] Vector2      m_MovePosition;
 	[NonSerialized] IEnumerator  m_MoveRoutine;
 
 	public void Setup(ElementPanel _Panel, int _Axis)
 	{
-		m_Panel = _Panel;
-		m_Axis  = _Axis;
+		Panel = _Panel;
+		Axis  = _Axis;
 	}
 
 	public void BringToFront()
@@ -69,15 +71,23 @@ public class ElementContainer : UIEventReceiver, IBeginDragHandler, IDragHandler
 			rectTransform.anchoredPosition = m_MovePosition;
 	}
 
+	protected abstract void OnBeginDrag();
+
+	protected abstract void OnDrag();
+
+	protected abstract void OnEndDrag();
+
+	protected abstract void OnPointerDown();
+
 	void IBeginDragHandler.OnBeginDrag(PointerEventData _Event)
 	{
-		if (m_Panel == null || Drag)
+		if (Panel == null)
 		{
 			PassEvent(_Event, ExecuteEvents.beginDragHandler);
 			return;
 		}
 		
-		switch (m_Axis)
+		switch (Axis)
 		{
 			case 0:
 				if (Mathf.Abs(_Event.delta.x) > Mathf.Abs(_Event.delta.y))
@@ -87,7 +97,7 @@ public class ElementContainer : UIEventReceiver, IBeginDragHandler, IDragHandler
 				}
 				break;
 			case 1:
-				if (Mathf.Abs(_Event.delta.x) < Mathf.Abs(_Event.delta.y))
+				if (Mathf.Abs(_Event.delta.y) > Mathf.Abs(_Event.delta.x))
 				{
 					PassEvent(_Event, ExecuteEvents.beginDragHandler);
 					return;
@@ -95,19 +105,16 @@ public class ElementContainer : UIEventReceiver, IBeginDragHandler, IDragHandler
 				break;
 		}
 		
+		Drag = true;
+		
 		if (ScrollRect != null)
 			ScrollRect.StopMovement();
 		
-		Drag = true;
-		
 		m_MovePosition = Vector2.positiveInfinity;
 		
-		rectTransform.anchoredPosition += GetLocalPosition(_Event.delta);
+		rectTransform.anchoredPosition += GetDelta(_Event);
 		
-		BringToFront();
-		
-		if (m_Panel != null)
-			m_Panel.Reposition();
+		OnBeginDrag();
 		
 		_Event.Use();
 	}
@@ -120,10 +127,9 @@ public class ElementContainer : UIEventReceiver, IBeginDragHandler, IDragHandler
 			return;
 		}
 		
-		rectTransform.anchoredPosition += GetLocalPosition(_Event.delta);
+		rectTransform.anchoredPosition += GetDelta(_Event);
 		
-		if (m_Panel != null && m_Panel.Replace(this))
-			m_Panel.Reposition();
+		OnDrag();
 		
 		_Event.Use();
 	}
@@ -138,19 +144,19 @@ public class ElementContainer : UIEventReceiver, IBeginDragHandler, IDragHandler
 		
 		Drag = false;
 		
-		if (m_Panel != null)
-		{
-			m_Panel.Replace(this);
-			m_Panel.Reposition();
-		}
+		rectTransform.anchoredPosition += GetDelta(_Event);
+		
+		OnEndDrag();
 		
 		_Event.Use();
 	}
 
-	public void OnPointerDown(PointerEventData _Event)
+	void IPointerDownHandler.OnPointerDown(PointerEventData _Event)
 	{
 		if (ScrollRect != null)
 			ScrollRect.StopMovement();
+		
+		OnPointerDown();
 	}
 
 	IEnumerator MoveRoutine()
