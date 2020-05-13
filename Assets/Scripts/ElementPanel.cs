@@ -5,8 +5,22 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 [ExecuteAlways]
+[RequireComponent(typeof(RectTransform))]
 public class ElementPanel : UIBehaviour
 {
+	public enum Direction
+	{
+		Horizontal,
+		Vertical
+	}
+
+	public enum Alignment
+	{
+		Start,
+		Center,
+		End
+	}
+
 	RectTransform RectTransform
 	{
 		get
@@ -17,14 +31,17 @@ public class ElementPanel : UIBehaviour
 		}
 	}
 
-	[SerializeField] float          m_Size     = 100;
-	[SerializeField] float          m_Spacing  = default;
-	[SerializeField] float          m_Duration = 0.5f;
-	[SerializeField] AnimationCurve m_Curve    = AnimationCurve.EaseInOut(0, 0, 1, 1);
+	[SerializeField] Direction      m_Direction = Direction.Horizontal;
+	[SerializeField] Alignment      m_Alignment = Alignment.Center;
+	[SerializeField] float          m_Size      = 100;
+	[SerializeField] float          m_Spacing   = default;
+	[SerializeField] float          m_Duration  = 0.5f;
+	[SerializeField] AnimationCurve m_Curve     = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+	[SerializeField] List<ElementContainer> m_Containers = new List<ElementContainer>();
 
 	RectTransform m_RectTransform;
-
-	readonly List<ElementContainer> m_Containers = new List<ElementContainer>();
+	IEnumerator   m_ResizeRoutine;
 
 	protected override void Awake()
 	{
@@ -32,7 +49,7 @@ public class ElementPanel : UIBehaviour
 		
 		CollectContainers();
 		
-		Reposition();
+		Reposition(true);
 	}
 
 	protected override void OnEnable()
@@ -41,6 +58,13 @@ public class ElementPanel : UIBehaviour
 		
 		CollectContainers();
 		
+		Reposition(true);
+	}
+
+	protected override void OnTransformParentChanged()
+	{
+		base.OnTransformParentChanged();
+		
 		Reposition();
 	}
 
@@ -48,7 +72,14 @@ public class ElementPanel : UIBehaviour
 	{
 		CollectContainers();
 		
+		#if UNITY_EDITOR
+		if (Application.isPlaying)
+			Reposition(true);
+		else
+			UnityEditor.EditorApplication.delayCall += () => Reposition();
+		#else
 		Reposition();
+		#endif
 	}
 
 	#if UNITY_EDITOR
@@ -56,118 +87,112 @@ public class ElementPanel : UIBehaviour
 	{
 		base.OnValidate();
 		
-		UnityEditor.EditorApplication.delayCall += Reposition;
+		UnityEditor.EditorApplication.delayCall += () => Reposition(true);
 	}
 	#endif
-
-	void CollectContainers()
-	{
-		for (int i = m_Containers.Count - 1; i >= 0; i--)
-		{
-			ElementContainer container = m_Containers[i];
-			
-			if (container == null || container.transform.parent != transform)
-				m_Containers.RemoveAt(i);
-		}
-		
-		HashSet<ElementContainer> containers = new HashSet<ElementContainer>(m_Containers);
-		
-		for (int i = 0; i < transform.childCount; i++)
-		{
-			ElementContainer container = transform.GetChild(i).GetComponent<ElementContainer>();;
-			
-			container.Setup(this);
-			
-			if (containers.Contains(container) || container == null || !container.gameObject.activeSelf)
-				continue;
-			
-			m_Containers.Add(container);
-		}
-	}
 
 	public bool Replace(ElementContainer _Container)
 	{
 		if (_Container == null)
 			return false;
 		
-		int position = m_Containers.IndexOf(_Container);
+		int sourceIndex = m_Containers.IndexOf(_Container);
+		int targetIndex = sourceIndex;
 		
-		if (position < 0)
+		if (sourceIndex < 0)
 			return false;
 		
-		m_Containers.RemoveAt(position);
+		Rect source = _Container.GetWorldRect();
 		
-		Rect source = _Container.rectTransform.rect;
-		source = new Rect(
-			_Container.transform.TransformPoint(source.position),
-			_Container.transform.TransformVector(source.size)
-		);
-		
-		float minDistance = float.MaxValue;
-		int index = 0;
-		for (int i = 0; i < m_Containers.Count; i++)
+		float position;
+		switch (m_Direction)
 		{
-			ElementContainer container = m_Containers[i];
-			
-			if (container == null)
-				continue;
-			
-			Rect target = container.GetPixelAdjustedRect();
-			target = new Rect(
-				container.transform.TransformPoint(target.position),
-				container.transform.TransformVector(target.size)
-			);
-			
-			// Check left side
-			float leftDistance = Mathf.Abs(source.center.x - target.xMin);
-			if (minDistance > leftDistance)
-			{
-				minDistance = leftDistance;
-				index       = i;
-			}
-			
-			// Check right side
-			float rightDistance = Mathf.Abs(source.center.x - target.xMax);
-			if (minDistance > rightDistance)
-			{
-				minDistance = rightDistance;
-				index       = i + 1;
-			}
+			case Direction.Horizontal:
+				position = source.center.x;
+				break;
+			case Direction.Vertical:
+				position = source.center.y;
+				break;
+			default:
+				return false;
 		}
 		
-		m_Containers.Insert(index, _Container);
+		float distance = float.MaxValue;
+		int index = 0;
+		foreach (ElementContainer container in m_Containers)
+		{
+			if (container == null || container == _Container)
+				continue;
+			
+			Rect target = container.GetWorldRect();
+			
+			float minDistance;
+			float maxDistance;
+			
+			switch (m_Direction)
+			{
+				case Direction.Horizontal:
+					minDistance = Mathf.Abs(position - target.xMin);
+					maxDistance = Mathf.Abs(position - target.xMax);
+					break;
+				case Direction.Vertical:
+					minDistance = Mathf.Abs(position - target.yMax);
+					maxDistance = Mathf.Abs(position - target.yMin);
+					break;
+				default:
+					return false;
+			}
+			
+			if (distance > minDistance)
+			{
+				distance    = minDistance;
+				targetIndex = index;
+			}
+			
+			if (distance > maxDistance)
+			{
+				distance    = maxDistance;
+				targetIndex = index + 1;
+			}
+			
+			index++;
+		}
 		
-		return position != index;
+		if (sourceIndex == targetIndex)
+			return false;
+		
+		m_Containers.RemoveAt(sourceIndex);
+		m_Containers.Insert(targetIndex, _Container);
+		
+		return true;
 	}
 
-	public void Move(ElementContainer _Container, int _Position)
-	{
-		if (_Container == null)
-			return;
-		
-		_Position = Mathf.Clamp(_Position, 0, m_Containers.Count - 1);
-		
-		int position = m_Containers.IndexOf(_Container);
-		
-		if (position < 0 || position == _Position)
-			return;
-		
-		m_Containers.RemoveAt(position);
-		m_Containers.Insert(_Position, _Container);
-	}
-
-	public void Reposition()
+	public void Reposition(bool _Instant = false)
 	{
 		if (IsDestroyed())
 			return;
 		
-		StopAllCoroutines();
+		float alignment;
+		switch (m_Alignment)
+		{
+			case Alignment.Start:
+				alignment = 0;
+				break;
+			case Alignment.Center:
+				alignment = 0.5f;
+				break;
+			case Alignment.End:
+				alignment = 1;
+				break;
+			default:
+				return;
+		}
 		
-		int count = m_Containers.Count(_Container => !_Container.Drag);
+		int count = m_Containers.Count(_Container => !_Container.IgnoreLayout);
 		
 		float totalSize = count * (m_Size + m_Spacing) - m_Spacing;
 		
-		float position = -totalSize * 0.5f;
+		float position = totalSize * alignment * (m_Direction == Direction.Horizontal ? -1 : 1);
 		
 		foreach (ElementContainer container in m_Containers)
 		{
@@ -179,45 +204,104 @@ public class ElementPanel : UIBehaviour
 			if (rectTransform == null)
 				continue;
 			
-			rectTransform.anchorMin = new Vector2(0.5f, 0);
-			rectTransform.anchorMax = new Vector2(0.5f, 1);
-			rectTransform.pivot     = new Vector2(0.5f, 0.5f);
-			rectTransform.sizeDelta = new Vector2(m_Size, 0);
+			rectTransform.pivot = new Vector2(0.5f, 0.5f);
 			
-			if (container.Drag)
-				continue;
-			
-			SetPosition(rectTransform, new Vector2(position + m_Size * 0.5f, 0));
-			
-			position += m_Size + m_Spacing;
+			switch (m_Direction)
+			{
+				case Direction.Horizontal:
+					rectTransform.anchorMin = new Vector2(alignment, 0);
+					rectTransform.anchorMax = new Vector2(alignment, 1);
+					rectTransform.sizeDelta = new Vector2(m_Size, 0);
+					container.Move(new Vector2(position + m_Size * 0.5f, 0), _Instant);
+					position += m_Size + m_Spacing;
+					break;
+				case Direction.Vertical:
+					rectTransform.anchorMin = new Vector2(0, 1 - alignment);
+					rectTransform.anchorMax = new Vector2(1, 1 - alignment);
+					rectTransform.sizeDelta = new Vector2(0, m_Size);
+					container.Move(new Vector2(0, position - m_Size * 0.5f), _Instant);
+					position -= m_Size + m_Spacing;
+					break;
+				default:
+					return;
+			}
 		}
 		
-		RectTransform.anchorMin = new Vector2(0.5f, 0);
-		RectTransform.anchorMax = new Vector2(0.5f, 1);
-		RectTransform.pivot     = new Vector2(0.5f, 0.5f);
+		switch (m_Direction)
+		{
+			case Direction.Horizontal:
+				RectTransform.anchorMin = new Vector2(alignment, 0);
+				RectTransform.anchorMax = new Vector2(alignment, 1);
+				RectTransform.pivot     = new Vector2(alignment, 0.5f);
+				Resize(new Vector2(totalSize, 0), _Instant);
+				break;
+			case Direction.Vertical:
+				RectTransform.anchorMin = new Vector2(0, 1 - alignment);
+				RectTransform.anchorMax = new Vector2(1, 1 - alignment);
+				RectTransform.pivot     = new Vector2(0.5f, 1 - alignment);
+				Resize(new Vector2(0, totalSize), _Instant);
+				break;
+			default:
+				return;
+		}
+	}
+
+	void CollectContainers()
+	{
+		for (int i = m_Containers.Count - 1; i >= 0; i--)
+		{
+			ElementContainer container = m_Containers[i];
+			
+			if (container == null || container.transform.parent != transform || container.IsDestroying() || container.IsDestroyed())
+				m_Containers.RemoveAt(i);
+		}
 		
-		SetSize(RectTransform, new Vector2(totalSize, RectTransform.sizeDelta.y));
+		HashSet<ElementContainer> containers = new HashSet<ElementContainer>(m_Containers);
+		
+		int axis;
+		switch (m_Direction)
+		{
+			case Direction.Horizontal:
+				axis = 0;
+				break;
+			case Direction.Vertical:
+				axis = 1;
+				break;
+			default:
+				return;
+		}
+		
+		for (int i = 0; i < transform.childCount; i++)
+		{
+			ElementContainer container = transform.GetChild(i).GetComponent<ElementContainer>();;
+			
+			if (container == null || container.IsDestroying() || container.IsDestroyed())
+				continue;
+			
+			container.Setup(this, axis);
+			
+			if (containers.Contains(container))
+				continue;
+			
+			m_Containers.Add(container);
+		}
 	}
 
-	void SetSize(RectTransform _Target, Vector2 _Size)
+	void Resize(Vector2 _Size, bool _Instant = false)
 	{
-		if (Application.isPlaying && gameObject.activeInHierarchy)
-			StartCoroutine(SizeRoutine(_Target, _Size));
-		else if (_Target != null)
-			_Target.sizeDelta = _Size;
+		if (m_ResizeRoutine != null)
+			StopCoroutine(m_ResizeRoutine);
+		m_ResizeRoutine = null;
+		
+		if (!_Instant && Application.isPlaying && gameObject.activeInHierarchy)
+			StartCoroutine(m_ResizeRoutine = ResizeRoutine(_Size));
+		else
+			RectTransform.sizeDelta = _Size;
 	}
 
-	void SetPosition(RectTransform _Target, Vector2 _Position)
+	IEnumerator ResizeRoutine(Vector2 _Size)
 	{
-		if (Application.isPlaying && gameObject.activeInHierarchy)
-			StartCoroutine(PositionRoutine(_Target, _Position));
-		else if (_Target != null)
-			_Target.anchoredPosition = _Position;
-	}
-
-	IEnumerator SizeRoutine(RectTransform _Target, Vector2 _Size)
-	{
-		Vector2 source = _Target.sizeDelta;
+		Vector2 source = RectTransform.sizeDelta;
 		Vector2 target = _Size;
 		
 		if (source == target)
@@ -232,32 +316,9 @@ public class ElementPanel : UIBehaviour
 			
 			float phase = m_Curve.Evaluate(time / m_Duration);
 			
-			_Target.sizeDelta = Vector2.Lerp(source, target, phase);
+			RectTransform.sizeDelta = Vector2.Lerp(source, target, phase);
 		}
 		
-		_Target.sizeDelta = target;
-	}
-
-	IEnumerator PositionRoutine(RectTransform _Target, Vector2 _Position)
-	{
-		Vector2 source = _Target.anchoredPosition;
-		Vector2 target = _Position;
-		
-		if (source == target)
-			yield break;
-		
-		float time = 0;
-		while (time < m_Duration)
-		{
-			yield return null;
-			
-			time += Time.deltaTime;
-			
-			float phase = m_Curve.Evaluate(time / m_Duration);
-			
-			_Target.anchoredPosition = Vector2.Lerp(source, target, phase);
-		}
-		
-		_Target.anchoredPosition = target;
+		RectTransform.sizeDelta = target;
 	}
 }

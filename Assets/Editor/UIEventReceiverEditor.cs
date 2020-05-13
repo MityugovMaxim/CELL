@@ -1,5 +1,6 @@
 using UnityEditor;
 
+[CanEditMultipleObjects]
 [CustomEditor(typeof(UIEventReceiver), true)]
 public class UIEventReceiverEditor : Editor
 {

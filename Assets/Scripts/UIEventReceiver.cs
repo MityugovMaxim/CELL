@@ -7,14 +7,47 @@ public class UIEventReceiver : Graphic
 {
 	static readonly List<RaycastResult> m_RaycastResults = new List<RaycastResult>();
 
+	bool m_Destroying;
+
 	protected override void OnPopulateMesh(VertexHelper _VertexHelper)
 	{
 		_VertexHelper.Clear();
 	}
 
-	protected Vector2 GetPosition(Vector2 _Position)
+	protected override void OnDestroy()
+	{
+		base.OnDestroy();
+		
+		m_Destroying = true;
+	}
+
+	public bool IsDestroying()
+	{
+		return m_Destroying;
+	}
+
+	public Rect GetLocalRect()
+	{
+		return GetPixelAdjustedRect();
+	}
+
+	public Rect GetWorldRect()
+	{
+		Rect rect = GetPixelAdjustedRect();
+		return new Rect(
+			rectTransform.TransformPoint(rect.position),
+			rectTransform.TransformVector(rect.size)
+		);
+	}
+
+	protected Vector2 GetLocalPosition(Vector2 _Position)
 	{
 		return transform.InverseTransformVector(_Position);
+	}
+
+	protected Vector2 GetWorldPosition(Vector2 _Position)
+	{
+		return transform.TransformVector(_Position);
 	}
 
 	protected void PassEvent<T>(PointerEventData _Event, ExecuteEvents.EventFunction<T> _Function) where T : IEventSystemHandler
