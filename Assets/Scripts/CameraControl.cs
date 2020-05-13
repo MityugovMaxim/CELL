@@ -48,13 +48,13 @@ public class CameraControl : UIEventReceiver, IScrollHandler, IPointerDownHandle
 		}
 	}
 
-	[SerializeField] Camera         m_Camera;
-	[SerializeField] float          m_MinSize;
-	[SerializeField] float          m_MaxSize;
-	[SerializeField] float          m_MomentumDuration;
-	[SerializeField] AnimationCurve m_MomentumCurve;
-	[SerializeField] Rect           m_Limit;
-	[SerializeField] float          m_SafeZone;
+	[SerializeField] Camera         m_Camera           = default;
+	[SerializeField] float          m_MinSize          = 1;
+	[SerializeField] float          m_MaxSize          = 10;
+	[SerializeField] float          m_MomentumDuration = 0.5f;
+	[SerializeField] AnimationCurve m_MomentumCurve    = AnimationCurve.Linear(0, 0, 1, 1);
+	[SerializeField] Rect           m_Limit            = Rect.zero;
+	[SerializeField] float          m_SafeZone         = 1;
 
 	Vector3 m_Position;
 	IEnumerator m_MomentumRoutine;

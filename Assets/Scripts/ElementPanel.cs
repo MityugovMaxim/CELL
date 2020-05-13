@@ -17,14 +17,14 @@ public class ElementPanel : UIBehaviour
 		}
 	}
 
-	[SerializeField] float          m_Size;
-	[SerializeField] float          m_Spacing;
-	[SerializeField] float          m_Duration;
-	[SerializeField] AnimationCurve m_Curve;
+	[SerializeField] float          m_Size     = 100;
+	[SerializeField] float          m_Spacing  = default;
+	[SerializeField] float          m_Duration = 0.5f;
+	[SerializeField] AnimationCurve m_Curve    = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
 	RectTransform m_RectTransform;
 
-	[SerializeField] List<ElementContainer> m_Containers = new List<ElementContainer>();
+	readonly List<ElementContainer> m_Containers = new List<ElementContainer>();
 
 	protected override void Awake()
 	{
