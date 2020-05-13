@@ -21,7 +21,7 @@ public class ElementPanel : UIBehaviour
 		End
 	}
 
-	RectTransform RectTransform
+	protected RectTransform RectTransform
 	{
 		get
 		{
@@ -38,7 +38,7 @@ public class ElementPanel : UIBehaviour
 	[SerializeField] float          m_Duration  = 0.5f;
 	[SerializeField] AnimationCurve m_Curve     = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-	[SerializeField] List<ElementContainer> m_Containers = new List<ElementContainer>();
+	readonly List<ElementContainer> m_Containers = new List<ElementContainer>();
 
 	RectTransform m_RectTransform;
 	IEnumerator   m_ResizeRoutine;
@@ -74,7 +74,7 @@ public class ElementPanel : UIBehaviour
 		
 		#if UNITY_EDITOR
 		if (Application.isPlaying)
-			Reposition(true);
+			Reposition();
 		else
 			UnityEditor.EditorApplication.delayCall += () => Reposition();
 		#else

@@ -149,7 +149,7 @@ public class CameraControl : UIEventReceiver, IScrollHandler, IPointerDownHandle
 	}
 	#endif
 
-	public void OnScroll(PointerEventData _Data)
+	void IScrollHandler.OnScroll(PointerEventData _Data)
 	{
 		if (m_Camera == null)
 			return;
@@ -169,32 +169,32 @@ public class CameraControl : UIEventReceiver, IScrollHandler, IPointerDownHandle
 		Position -= delta;
 	}
 
-	public void OnPointerDown(PointerEventData _Data)
+	void IPointerDownHandler.OnPointerDown(PointerEventData _Data)
 	{
 		if (m_MomentumRoutine != null)
 			StopCoroutine(m_MomentumRoutine);
 		m_MomentumRoutine = null;
 	}
 
-	public void OnDrag(PointerEventData _Data)
+	void IDragHandler.OnDrag(PointerEventData _Event)
 	{
 		if (m_Camera == null)
 			return;
 		
-		Vector3 source = m_Camera.ScreenToWorldPoint(_Data.position - _Data.delta);
-		Vector3 target = m_Camera.ScreenToWorldPoint(_Data.position);
+		Vector3 source = m_Camera.ScreenToWorldPoint(_Event.position - _Event.delta);
+		Vector3 target = m_Camera.ScreenToWorldPoint(_Event.position);
 		Vector3 delta  = target - source;
 		
 		Position -= delta;
 	}
 
-	public void OnEndDrag(PointerEventData _Data)
+	void IEndDragHandler.OnEndDrag(PointerEventData _Event)
 	{
 		if (m_Camera == null)
 			return;
 		
-		Vector3 source = m_Camera.ScreenToWorldPoint(_Data.position - _Data.delta);
-		Vector3 target = m_Camera.ScreenToWorldPoint(_Data.position);
+		Vector3 source = m_Camera.ScreenToWorldPoint(_Event.position - _Event.delta);
+		Vector3 target = m_Camera.ScreenToWorldPoint(_Event.position);
 		Vector3 delta = target - source;
 		
 		StartCoroutine(m_MomentumRoutine = MomentumRoutine(delta / Time.deltaTime));
