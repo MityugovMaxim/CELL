@@ -18,9 +18,9 @@ public class ColorCell : GameCell
 	Action m_RestoreFinished;
 	Action m_SampleFinished;
 
-	public override void Setup(Level _Level, Vector3Int _Position)
+	public override void Setup(Level _Level)
 	{
-		base.Setup(_Level, _Position);
+		base.Setup(_Level);
 		
 		StateBehaviour.AddStateBehaviour(Animator, m_ShowStateID);
 		StateBehaviour.SetCompleteStateListener(Animator, m_ShowStateID, InvokeShowFinished);
@@ -33,11 +33,6 @@ public class ColorCell : GameCell
 		
 		StateBehaviour.AddStateBehaviour(Animator, m_SampleStateID);
 		StateBehaviour.SetCompleteStateListener(Animator, m_SampleStateID, InvokeSampleFinished);
-	}
-
-	public override void Remove()
-	{
-		Hide(base.Remove);
 	}
 
 	public override void Show(Action _Finished = null)
@@ -133,6 +128,6 @@ public class ColorCell : GameCell
 
 	void InvokeSampleFinished()
 	{
-		InvokeCallback();
+		InvokeCallback(ref m_SampleFinished);
 	}
 }

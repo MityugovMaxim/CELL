@@ -10,9 +10,9 @@ public class OriginCell : GameCell
 
 	Action m_SampleFinished;
 
-	public override void Setup(Level _Level, Vector3Int _Position)
+	public override void Setup(Level _Level)
 	{
-		base.Setup(_Level, _Position);
+		base.Setup(_Level);
 		
 		StateBehaviour.AddStateBehaviour(Animator, m_SampleStateID);
 		StateBehaviour.SetCompleteStateListener(Animator, m_SampleStateID, InvokeSampleFinished);

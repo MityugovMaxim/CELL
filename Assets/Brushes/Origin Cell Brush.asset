@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66b64e9ce5464ef6952db28b4a20c91f, type: 3}
+  m_Name: Origin Cell Brush
+  m_EditorClassIdentifier: 
+  m_Cells:
+  - m_Tile: {fileID: 11400000, guid: 1a4fb1a8f072d4d2a91b227c38852f5e, type: 2}
+    m_Matrix:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_Color: {r: 0.3019608, g: 0.76862746, b: 0.67058825, a: 1}
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Pivot: {x: 0, y: 0, z: 0}
+  m_CanChangeZPosition: 0
+  m_GameCells:
+  - {fileID: 6704197913892499274, guid: 175c1089384654234bea1cab2fbe03c2, type: 3}
+  - {fileID: 6704197913892499274, guid: c93679b0386884071931fd0da4830a6a, type: 3}
+  - {fileID: 6704197913892499274, guid: 9edc48371779b42d58f3d25bae54e334, type: 3}
+  - {fileID: 6704197913892499274, guid: 056d1576ef0b2462582e9d16758a6b85, type: 3}
+  - {fileID: 6704197913892499274, guid: 07517baa467204ca3bffddfbe35df661, type: 3}
+  m_LayerIndex: 1
+  m_CellIndex: 1

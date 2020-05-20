@@ -6,9 +6,20 @@ using UnityEngine.Tilemaps;
 
 public class Level : MonoBehaviour
 {
-	[SerializeField] Tilemap m_Ground     = default;
-	[SerializeField] float   m_SampleRate = 0.15f;
+	Dictionary<Vector3Int, GameCell> ColorCells => m_ColorCells ?? (m_ColorCells = new Dictionary<Vector3Int, GameCell>());
 
+	Dictionary<Vector3Int, GameCell> SpecialCells => m_SpecialCells ?? (m_SpecialCells = new Dictionary<Vector3Int, GameCell>());
+
+	Dictionary<Vector3Int, GameCell> ConditionCells => m_ConditionCells ?? (m_ConditionCells = new Dictionary<Vector3Int, GameCell>());
+
+	HashSet<Vector3Int> ExecuteCells => m_ExecuteCells ?? (m_ExecuteCells = new HashSet<Vector3Int>());
+
+	HashSet<Vector3Int> CompletedConditions => m_CompletedConditions ?? (m_CompletedConditions = new HashSet<Vector3Int>());
+
+	HashSet<Vector3Int> FailedConditions => m_FailedConditions ?? (m_FailedConditions = new HashSet<Vector3Int>());
+
+	[SerializeField] float     m_SampleRate   = 0.15f;
+	[SerializeField] Tilemap   m_GroundMap    = default;
 	[SerializeField] Transform m_ColorMap     = default;
 	[SerializeField] Transform m_SpecialMap   = default;
 	[SerializeField] Transform m_ConditionMap = default;
@@ -33,28 +44,28 @@ public class Level : MonoBehaviour
 		m_DefaultColorCells = m_ColorMap.GetComponentsInChildren<GameCell>();
 		foreach (GameCell colorCell in m_DefaultColorCells)
 		{
-			Vector3Int position = GetCellPosition(colorCell.transform.position);
+			Vector3Int position = GetGridPosition(colorCell);
 			colorCell.transform.position = GetWorldPosition(position);
 		}
 		
 		m_DefaultSpecialCells = m_SpecialMap.GetComponentsInChildren<GameCell>();
 		foreach (GameCell specialCell in m_DefaultSpecialCells)
 		{
-			Vector3Int position = GetCellPosition(specialCell.transform.position);
+			Vector3Int position = GetGridPosition(specialCell);
 			specialCell.transform.position = GetWorldPosition(position);
 		}
 		
 		m_DefaultConditionCells = m_ConditionMap.GetComponentsInChildren<GameCell>();
 		foreach (GameCell conditionCell in m_DefaultConditionCells)
 		{
-			Vector3Int position = GetCellPosition(conditionCell.transform.position);
+			Vector3Int position = GetGridPosition(conditionCell);
 			conditionCell.transform.position = GetWorldPosition(position);
 		}
 	}
 
 	void Awake()
 	{
-		RestoreCells();
+		Restore();
 	}
 
 	void Update()
@@ -62,116 +73,197 @@ public class Level : MonoBehaviour
 		if (Input.GetKeyDown(KeyCode.Space))
 			Execute();
 		if (Input.GetKeyDown(KeyCode.Backspace))
-			RestoreCells();
+			Restart();
 	}
 
 	public void CompleteCondition(Vector3Int _Position)
 	{
-		if (m_CompletedConditions == null)
-			m_CompletedConditions = new HashSet<Vector3Int>();
-		
-		m_CompletedConditions.Add(_Position);
+		CompletedConditions.Add(_Position);
 	}
 
 	public void FailCondition(Vector3Int _Position)
 	{
-		if (m_FailedConditions == null)
-			m_FailedConditions = new HashSet<Vector3Int>();
-		
-		m_FailedConditions.Add(_Position);
+		FailedConditions.Add(_Position);
 	}
 
 	public void Execute()
-	{
-		RestoreCells();
-		
-		foreach (GameCell colorCell in m_DefaultColorCells)
-		{
-			if (colorCell == null)
-				continue;
-			
-			Vector3Int position = GetCellPosition(colorCell.transform.position);
-			
-			colorCell.Setup(this, position);
-			
-			m_ColorCells[position] = colorCell;
-			
-			ExecuteCell(position);
-		}
-		
-		foreach (GameCell specialCell in m_DefaultSpecialCells)
-		{
-			if (specialCell == null)
-				continue;
-			
-			Vector3Int position = GetCellPosition(specialCell.transform.position);
-			
-			specialCell.Setup(this, position);
-			
-			m_SpecialCells[position] = specialCell;
-		}
-		
-		foreach (GameCell conditionCell in m_DefaultConditionCells)
-		{
-			if (conditionCell == null)
-				continue;
-			
-			Vector3Int position = GetCellPosition(conditionCell.transform.position);
-			
-			conditionCell.Setup(this, position);
-			
-			 m_ConditionCells[position] = conditionCell;
-		}
-		
-		StartCoroutine(m_ExecuteRoutine = ExecuteRoutine());
-	}
-
-	public void RestoreCells()
 	{
 		if (m_ExecuteRoutine != null)
 			StopCoroutine(m_ExecuteRoutine);
 		m_ExecuteRoutine = null;
 		
-		if (m_CompletedConditions == null)
-			m_CompletedConditions = new HashSet<Vector3Int>();
-		else
-			m_CompletedConditions.Clear();
-		
-		if (m_FailedConditions == null)
-			m_FailedConditions = new HashSet<Vector3Int>();
-		else
-			m_FailedConditions.Clear();
-		
-		if (m_ColorCells == null)
-			m_ColorCells = new Dictionary<Vector3Int, GameCell>();
-		else
-			m_ColorCells.Clear();
-		
-		if (m_SpecialCells == null)
-			m_SpecialCells = new Dictionary<Vector3Int, GameCell>();
-		else
-			m_SpecialCells.Clear();
-		
-		if (m_ConditionCells == null)
-			m_ConditionCells = new Dictionary<Vector3Int, GameCell>();
-		else
-			m_ConditionCells.Clear();
-		
-		if (m_ExecuteCells == null)
-			m_ExecuteCells = new HashSet<Vector3Int>();
-		else
-			m_ExecuteCells.Clear();
-		
-		RestoreCells(m_ColorMap, m_DefaultColorCells);
-		
-		RestoreCells(m_SpecialMap, m_DefaultSpecialCells);
-		
-		RestoreCells(m_ConditionMap, m_DefaultConditionCells);
+		StartCoroutine(m_ExecuteRoutine = ExecuteRoutine());
 	}
 
-	void RestoreCells(Transform _Layer, GameCell[] _DefaultCells)
+	public void Restart()
 	{
-		HashSet<GameCell> defaultCells = new HashSet<GameCell>(_DefaultCells);
+		if (m_ExecuteRoutine != null)
+			StopCoroutine(m_ExecuteRoutine);
+		m_ExecuteRoutine = null;
+		
+		Restore();
+	}
+
+	public void ExecuteCell(Vector3Int _Position)
+	{
+		if (!ExecuteCells.Contains(_Position))
+			ExecuteCells.Add(_Position);
+	}
+
+	public void ExecuteCell(GameCell _Cell)
+	{
+		if (_Cell != null)
+			ExecuteCell(_Cell.Position);
+	}
+
+	public void ExecuteCell(params GameCell[] _Cells)
+	{
+		foreach (GameCell cell in _Cells)
+			ExecuteCell(cell);
+	}
+
+	public bool ContainsGround(Vector3Int _Position)
+	{
+		return m_GroundMap != null && m_GroundMap.HasTile(_Position);
+	}
+
+	public Vector3 GetWorldPosition(Vector3Int _Position)
+	{
+		return m_GroundMap != null ? m_GroundMap.CellToWorld(_Position) : Vector3.zero;
+	}
+
+	public Vector3 GetWorldPosition(GameCell _Cell)
+	{
+		return _Cell != null ? GetWorldPosition(_Cell.Position) : Vector3.zero;
+	}
+
+	public Vector3Int GetGridPosition(Vector3 _Position)
+	{
+		return m_GroundMap != null ? m_GroundMap.WorldToCell(_Position) : Vector3Int.zero;
+	}
+
+	public Vector3Int GetGridPosition(GameCell _Cell)
+	{
+		return _Cell != null ? GetGridPosition(_Cell.transform.position) : Vector3Int.zero;
+	}
+
+	public void AddColorCell(Vector3Int _Position, GameCell _Cell)
+	{
+		if (_Cell == null || ColorCells.ContainsKey(_Position))
+			return;
+		
+		GameCell cell = GameCellPool.Instantiate(
+			_Cell,
+			GetWorldPosition(_Position),
+			m_ColorMap
+		);
+		
+		cell.Setup(this);
+		cell.Show();
+		
+		ColorCells[_Position] = cell;
+	}
+
+	public GameCell GetColorCell(Vector3Int _Position)
+	{
+		return ColorCells.ContainsKey(_Position) ? ColorCells[_Position] : null;
+	}
+
+	public void RemoveColorCell(Vector3Int _Position)
+	{ 
+		GameCell cell = GetColorCell(_Position);
+		
+		if (cell != null)
+			cell.Hide(() => GameCellPool.Destroy(cell));
+		
+		ColorCells.Remove(_Position);
+	}
+
+	public void AddSpecialCell(Vector3Int _Position, GameCell _Cell)
+	{
+		if (_Cell == null || SpecialCells.ContainsKey(_Position))
+			return;
+		
+		GameCell cell = GameCellPool.Instantiate(
+			_Cell,
+			GetWorldPosition(_Position),
+			m_SpecialMap
+		);
+		
+		cell.Setup(this);
+		cell.Show();
+		
+		SpecialCells[_Position] = cell;
+	}
+
+	public GameCell GetSpecialCell(Vector3Int _Position)
+	{
+		return SpecialCells.ContainsKey(_Position) ? SpecialCells[_Position] : null;
+	}
+
+	public void RemoveSpecialCell(Vector3Int _Position)
+	{
+		GameCell cell = GetSpecialCell(_Position);
+		
+		if (cell != null)
+			cell.Hide(() => GameCellPool.Destroy(cell));
+		
+		SpecialCells.Remove(_Position);
+	}
+
+	public void AddConditionCell(Vector3Int _Position, GameCell _Cell)
+	{
+		if (_Cell == null || ConditionCells.ContainsKey(_Position))
+			return;
+		
+		GameCell cell = GameCellPool.Instantiate(
+			_Cell,
+			GetWorldPosition(_Position),
+			m_ConditionMap
+		);
+		
+		cell.Setup(this);
+		cell.Show();
+		
+		ConditionCells[_Position] = cell;
+	}
+
+	public GameCell GetConditionCell(Vector3Int _Position)
+	{
+		return ConditionCells.ContainsKey(_Position) ? ConditionCells[_Position] : null;
+	}
+
+	public void RemoveConditionCell(Vector3Int _Position)
+	{
+		GameCell cell = GetConditionCell(_Position);
+		
+		if (cell != null)
+			cell.Hide(() => GameCellPool.Destroy(cell));
+		
+		ConditionCells.Remove(_Position);
+	}
+
+	void Restore()
+	{
+		ColorCells.Clear();
+		SpecialCells.Clear();
+		ConditionCells.Clear();
+		CompletedConditions.Clear();
+		FailedConditions.Clear();
+		ExecuteCells.Clear();
+		
+		RestoreCells(m_ColorMap, m_DefaultColorCells, ColorCells);
+		
+		RestoreCells(m_SpecialMap, m_DefaultSpecialCells, SpecialCells);
+		
+		RestoreCells(m_ConditionMap, m_DefaultConditionCells, ConditionCells);
+		
+		ExecuteCell(m_DefaultColorCells);
+	}
+
+	void RestoreCells(Transform _Layer, IEnumerable<GameCell> _Cells, Dictionary<Vector3Int, GameCell> _Registry)
+	{
+		HashSet<GameCell> cells = new HashSet<GameCell>(_Cells);
 		for (int i = 0; i < _Layer.childCount; i++)
 		{
 			GameCell cell = _Layer.GetChild(i).GetComponent<GameCell>();
@@ -179,141 +271,18 @@ public class Level : MonoBehaviour
 			if (cell == null)
 				continue;
 			
-			if (defaultCells.Contains(cell))
+			if (cells.Contains(cell))
+			{
 				cell.Restore();
+				cell.Setup(this);
+				
+				_Registry[cell.Position] = cell;
+			}
 			else
-				cell.Remove();
+			{
+				cell.Hide(() => GameCellPool.Destroy(cell));
+			}
 		}
-	}
-
-	public void ExecuteCell(Vector3Int _Position)
-	{
-		if (m_ExecuteCells == null)
-			m_ExecuteCells = new HashSet<Vector3Int>();
-		
-		if (m_ExecuteCells.Contains(_Position))
-			return;
-		
-		m_ExecuteCells.Add(_Position);
-	}
-
-	public bool ContainsGround(Vector3Int _Position)
-	{
-		return m_Ground != null && m_Ground.HasTile(_Position);
-	}
-
-	public Vector3 GetWorldPosition(Vector3Int _Position)
-	{
-		return m_Ground != null ? m_Ground.CellToWorld(_Position) : Vector3.zero;
-	}
-
-	public Vector3Int GetCellPosition(Vector3 _Position)
-	{
-		return m_Ground != null ? m_Ground.WorldToCell(_Position) : Vector3Int.zero;
-	}
-
-	public void AddColorCell(Vector3Int _Position, GameCell _ColorCell)
-	{
-		if (_ColorCell == null)
-			return;
-		
-		if (m_ColorCells == null)
-			m_ColorCells = new Dictionary<Vector3Int, GameCell>();
-		
-		if (m_ColorCells.ContainsKey(_Position))
-			return;
-		
-		GameCell colorCell = Instantiate(
-			_ColorCell,
-			GetWorldPosition(_Position),
-			Quaternion.identity,
-			m_ColorMap
-		);
-		
-		colorCell.Setup(this, _Position);
-		colorCell.Show();
-		
-		m_ColorCells[_Position] = colorCell;
-	}
-
-	public GameCell GetColorCell(Vector3Int _Position)
-	{
-		if (m_ColorCells == null)
-			return null;
-		
-		if (!m_ColorCells.ContainsKey(_Position))
-			return null;
-		
-		return m_ColorCells[_Position];
-	}
-
-	public void RemoveColorCell(Vector3Int _Position)
-	{ 
-		GameCell colorCell = GetColorCell(_Position);
-		
-		if (colorCell == null)
-			return;
-		
-		colorCell.Remove();
-		
-		m_ColorCells.Remove(_Position);
-	}
-
-	public void AddSpecialCell(Vector3Int _Position, GameCell _SpecialCell)
-	{
-		if (_SpecialCell == null)
-			return;
-		
-		if (m_SpecialCells == null)
-			m_SpecialCells = new Dictionary<Vector3Int, GameCell>();
-		
-		if (m_SpecialCells.ContainsKey(_Position))
-			return;
-		
-		GameCell specialCell = Instantiate(
-			_SpecialCell,
-			GetWorldPosition(_Position),
-			Quaternion.identity,
-			m_SpecialMap
-		);
-		
-		specialCell.Setup(this, _Position);
-		
-		m_SpecialCells[_Position] = specialCell;
-	}
-
-	public GameCell GetSpecialCell(Vector3Int _Position)
-	{
-		if (m_SpecialCells == null)
-			return null;
-		
-		if (!m_SpecialCells.ContainsKey(_Position))
-			return null;
-		
-		return m_SpecialCells[_Position];
-	}
-
-	public void RemoveSpecialCell(Vector3Int _Position)
-	{
-		GameCell specialCell = GetSpecialCell(_Position);
-		
-		if (specialCell == null)
-			return;
-		
-		specialCell.Remove();
-		
-		m_SpecialCells.Remove(_Position);
-	}
-
-	public GameCell GetConditionCell(Vector3Int _Position)
-	{
-		if (m_ConditionCells == null)
-			return null;
-		
-		if (!m_ConditionCells.ContainsKey(_Position))
-			return null;
-		
-		return m_ConditionCells[_Position];
 	}
 
 	void SampleColor(Vector3Int _Position, Action _Finished = null)
@@ -348,11 +317,15 @@ public class Level : MonoBehaviour
 
 	IEnumerator ExecuteRoutine()
 	{
-		while (m_ExecuteCells.Count > 0)
+		Restore();
+		
+		yield return new WaitForSeconds(0.2f);
+		
+		while (ExecuteCells.Count > 0)
 		{
-			List<Vector3Int> positions = new List<Vector3Int>(m_ExecuteCells);
+			List<Vector3Int> positions = new List<Vector3Int>(ExecuteCells);
 			
-			m_ExecuteCells.Clear();
+			ExecuteCells.Clear();
 			
 			// Process special cells
 			int specialCount = positions.Count;

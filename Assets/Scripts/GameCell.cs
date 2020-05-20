@@ -29,7 +29,7 @@ public abstract class GameCell : MonoBehaviour, IEquatable<GameCell>
 		}
 	}
 
-	[SerializeField, HideInInspector] int        m_ID       = default;
+	[SerializeField] int        m_ID       = default;
 	[SerializeField, HideInInspector] Level      m_Level    = default;
 	[SerializeField, HideInInspector] Vector3Int m_Position = default;
 
@@ -47,7 +47,7 @@ public abstract class GameCell : MonoBehaviour, IEquatable<GameCell>
 		{
 			GameCell cell = UnityEditor.EditorUtility.InstanceIDToObject(instanceID) as GameCell;
 			
-			if (cell == null)
+			if (cell == null || UnityEditor.PrefabUtility.IsPartOfPrefabInstance(cell))
 				return;
 			
 			if (UnityEditor.PrefabUtility.IsPartOfPrefabAsset(cell) && cell.m_ID != instanceID)
@@ -59,15 +59,19 @@ public abstract class GameCell : MonoBehaviour, IEquatable<GameCell>
 	}
 	#endif
 
-	public virtual void Setup(Level _Level, Vector3Int _Position)
+	public virtual void Setup(Level _Level)
 	{
-		m_Level    = _Level;
-		m_Position = _Position;
-	}
-
-	public virtual void Remove()
-	{
-		Destroy(gameObject);
+		m_Level = _Level;
+		
+		if (m_Level == null)
+		{
+			Debug.LogError("[GameCell] Setup failed. Level not found.");
+			return;
+		}
+		
+		m_Position = m_Level.GetGridPosition(this);
+		
+		transform.position = m_Level.GetWorldPosition(this);
 	}
 
 	public virtual void Show(Action _Finished = null)
@@ -89,6 +93,22 @@ public abstract class GameCell : MonoBehaviour, IEquatable<GameCell>
 	}
 
 	public abstract void Sample(Action _Finished = null);
+
+	public static bool operator ==(GameCell _A, GameCell _B)
+	{
+		if (ReferenceEquals(_A, _B))
+			return true;
+		if (ReferenceEquals(_A, null))
+			return false;
+		if (ReferenceEquals(_B, null))
+			return false;
+		return _A.ID == _B.ID;
+	}
+
+	public static bool operator !=(GameCell _A, GameCell _B)
+	{
+		return !(_A == _B);
+	}
 
 	public bool Equals(GameCell _Cell)
 	{

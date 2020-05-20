@@ -16,9 +16,9 @@ public class TargetCell : GameCell
 	Action m_CompleteFinished;
 	Action m_FailFinished;
 
-	public override void Setup(Level _Level, Vector3Int _Position)
+	public override void Setup(Level _Level)
 	{
-		base.Setup(_Level, _Position);
+		base.Setup(_Level);
 		
 		StateBehaviour.AddStateBehaviour(Animator, m_RestoreStateID);
 		StateBehaviour.SetCompleteStateListener(Animator, m_RestoreStateID, InvokeRestoreFinished);
