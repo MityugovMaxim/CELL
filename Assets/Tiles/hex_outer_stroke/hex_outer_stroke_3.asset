@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 847ec7d14745f42b480ef5d9ab282e34, type: 3}
+  m_Name: hex_outer_stroke_3
+  m_EditorClassIdentifier: 
+  m_Sprite: {fileID: 21300000, guid: 7251424dd0ac2466cbf7cdfefffc083d, type: 3}
+  m_Object: {fileID: 0}
+  m_Color: {r: 0.85490197, g: 0.85490197, b: 0.85490197, a: 1}
+  m_Flags: 2
+  m_Transform:
+    e00: 1
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 1
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 1
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 1
+  m_ColliderType: 1
+  m_Rules:
+  - m_Pattern: 1040191488
+    m_Sprite: {fileID: 21300000, guid: 92cbabbe142bc4681b909534db7dc656, type: 3}
+  - m_Pattern: 1006645248
+    m_Sprite: {fileID: 21300000, guid: f0230e06873d5430989e82d343709b9b, type: 3}
+  - m_Pattern: 973099008
+    m_Sprite: {fileID: 21300000, guid: 246eac490c9ed4446a69040fcf944822, type: 3}
+  - m_Pattern: 906006528
+    m_Sprite: {fileID: 21300000, guid: 379f81c34ad674f17994c588feaed42a, type: 3}
+  - m_Pattern: 939552768
+    m_Sprite: {fileID: 21300000, guid: dce770f9183c74f2cafc0ea7e8e4300e, type: 3}
+  - m_Pattern: 872460288
+    m_Sprite: {fileID: 21300000, guid: a20678d013a1e434983403c92b684e78, type: 3}
+  - m_Pattern: 738275328
+    m_Sprite: {fileID: 21300000, guid: cdf400ca9c4e142758e77c4f7fb60167, type: 3}
+  - m_Pattern: 704729088
+    m_Sprite: {fileID: 21300000, guid: 304027e8a80a14901bc203c839690afb, type: 3}
+  - m_Pattern: 805367808
+    m_Sprite: {fileID: 21300000, guid: cd631466e1c414c3aacd6d1f57e8cd51, type: 3}
+  - m_Pattern: 671182848
+    m_Sprite: {fileID: 21300000, guid: 1f9d5874112bf4f988d5786047cdd212, type: 3}
+  - m_Pattern: 604090368
+    m_Sprite: {fileID: 21300000, guid: 3418a8c64d0a741d18efa437629c6cee, type: 3}
+  - m_Pattern: 536997888
+    m_Sprite: {fileID: 21300000, guid: 4ef0b96ee8f63446b8474a67b5c33f2c, type: 3}
+  - m_Pattern: 258048
+    m_Sprite: {fileID: 21300000, guid: 617cd2ae61c5d4ec8a58a5e576331741, type: 3}
+  - m_Pattern: 1056964608
+    m_Sprite: {fileID: 21300000, guid: 8d1242fbc45dd45fb9f8e8bc5dfdad8c, type: 3}

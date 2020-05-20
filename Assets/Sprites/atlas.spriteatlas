@@ -1,0 +1,110 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: atlas
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings:
+    - serializedVersion: 3
+      m_BuildTarget: DefaultTexturePlatform
+      m_MaxTextureSize: 2048
+      m_ResizeAlgorithm: 0
+      m_TextureFormat: -1
+      m_TextureCompression: 0
+      m_CompressionQuality: 50
+      m_CrunchedCompression: 0
+      m_AllowsAlphaSplitting: 0
+      m_Overridden: 0
+      m_AndroidETC2FallbackOverride: 0
+      m_ForceMaximumCompressionQuality_BC6H_BC7: 0
+    packingSettings:
+      serializedVersion: 2
+      padding: 2
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+    variantMultiplier: 1
+    packables:
+    - {fileID: 102900000, guid: 724ea1a12ea98434d827f60ed48782a6, type: 3}
+    totalSpriteSurfaceArea: 954900
+    bindAsDefault: 1
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites:
+  - {fileID: 21300000, guid: a20678d013a1e434983403c92b684e78, type: 3}
+  - {fileID: 21300000, guid: a6a74611a9e1741a1bdefa8697f93557, type: 3}
+  - {fileID: 21300000, guid: 5de49ae2b86ec4589896f7c9f2203abe, type: 3}
+  - {fileID: 21300000, guid: 379f81c34ad674f17994c588feaed42a, type: 3}
+  - {fileID: 21300000, guid: 05a95a34f68ed4750815aeeed30bf1fd, type: 3}
+  - {fileID: 21300000, guid: 1f9d5874112bf4f988d5786047cdd212, type: 3}
+  - {fileID: 21300000, guid: ac180f659ccc940a0ad734b056d599aa, type: 3}
+  - {fileID: 21300000, guid: 6e9fdb75d54ae4fd8afef7ffeebe1ab3, type: 3}
+  - {fileID: 21300000, guid: 609889f5401604a27a7e88252fd06266, type: 3}
+  - {fileID: 21300000, guid: f0230e06873d5430989e82d343709b9b, type: 3}
+  - {fileID: 21300000, guid: cd631466e1c414c3aacd6d1f57e8cd51, type: 3}
+  - {fileID: 21300000, guid: 3418a8c64d0a741d18efa437629c6cee, type: 3}
+  - {fileID: 21300000, guid: 1310cf2880ec64efcb7933f89a524b37, type: 3}
+  - {fileID: 21300000, guid: 304027e8a80a14901bc203c839690afb, type: 3}
+  - {fileID: 21300000, guid: 2047ac09dfa934a6fbd07521e9bab4a3, type: 3}
+  - {fileID: 21300000, guid: 246eac490c9ed4446a69040fcf944822, type: 3}
+  - {fileID: 21300000, guid: dce770f9183c74f2cafc0ea7e8e4300e, type: 3}
+  - {fileID: 21300000, guid: 1ecff96a9d4884fafb40fbb43aca56eb, type: 3}
+  - {fileID: 21300000, guid: cdf400ca9c4e142758e77c4f7fb60167, type: 3}
+  - {fileID: 21300000, guid: 22baaa3b9b6db4fb08deab108d12c9e4, type: 3}
+  - {fileID: 21300000, guid: 8941e66b147824fa6b0d2bbb8109a853, type: 3}
+  - {fileID: 21300000, guid: 6f735d7b41d3043cead5a6a4510e47f3, type: 3}
+  - {fileID: 21300000, guid: 2f7682bbed38e490a89142906513fd4f, type: 3}
+  - {fileID: 21300000, guid: 8d1242fbc45dd45fb9f8e8bc5dfdad8c, type: 3}
+  - {fileID: 21300000, guid: 4e8ab6aca4cdd4ebca91e05e8d04472b, type: 3}
+  - {fileID: 21300000, guid: 7251424dd0ac2466cbf7cdfefffc083d, type: 3}
+  - {fileID: 21300000, guid: 4ef0b96ee8f63446b8474a67b5c33f2c, type: 3}
+  - {fileID: 21300000, guid: 617cd2ae61c5d4ec8a58a5e576331741, type: 3}
+  - {fileID: 21300000, guid: 92cbabbe142bc4681b909534db7dc656, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - hex_outer_stroke_6
+  - hex_inner_stroke_4
+  - hex_inner_stroke_8
+  - hex_outer_stroke_4
+  - hex_fill
+  - hex_outer_stroke_10
+  - hex_inner_stroke_11
+  - hex_inner_stroke_3
+  - hex_inner_stroke_12
+  - hex_outer_stroke_2
+  - hex_outer_stroke_9
+  - hex_outer_stroke_11
+  - hex_inner_stroke_2
+  - hex_outer_stroke_8
+  - hex_inner_stroke_9
+  - hex_outer_stroke_3
+  - hex_outer_stroke_5
+  - hex_inner_stroke_5
+  - hex_outer_stroke_7
+  - hex_inner_stroke_1
+  - hex_inner_stroke_14
+  - hex_inner_stroke_10
+  - hex_inner_stroke_7
+  - hex_outer_stroke_14
+  - hex_inner_stroke_6
+  - hex_inner_stroke_13
+  - hex_outer_stroke_12
+  - hex_outer_stroke_13
+  - hex_outer_stroke_1
+  m_Tag: atlas
+  m_IsVariant: 0
