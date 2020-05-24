@@ -4,20 +4,13 @@ using UnityEngine;
 [RequireComponent(typeof(Animator))]
 public abstract class GameCell : MonoBehaviour, IEquatable<GameCell>
 {
-	public int ID
-	{
-		get { return m_ID; }
-	}
+	public int ID => m_ID;
 
-	public Level Level
-	{
-		get { return m_Level; }
-	}
+	protected GameStage Stage { get; private set; }
 
-	public Vector3Int Position
-	{
-		get { return m_Position; }
-	}
+	protected GameLayerType LayerType { get; private set; }
+
+	protected Vector3Int Position { get; private set; }
 
 	protected Animator Animator
 	{
@@ -29,49 +22,23 @@ public abstract class GameCell : MonoBehaviour, IEquatable<GameCell>
 		}
 	}
 
-	[SerializeField] int        m_ID       = default;
-	[SerializeField, HideInInspector] Level      m_Level    = default;
-	[SerializeField, HideInInspector] Vector3Int m_Position = default;
+	[SerializeField] int m_ID = default;
 
 	Animator m_Animator;
 
-	#if UNITY_EDITOR
-	protected virtual void OnValidate()
+	public virtual void Setup(GameStage _Stage, GameLayerType _LayerType, Vector3Int _Position)
 	{
-		if (Application.isPlaying)
-			return;
-		
-		int instanceID = GetInstanceID();
-		
-		UnityEditor.EditorApplication.delayCall += () =>
+		if (_Stage == null)
 		{
-			GameCell cell = UnityEditor.EditorUtility.InstanceIDToObject(instanceID) as GameCell;
-			
-			if (cell == null || UnityEditor.PrefabUtility.IsPartOfPrefabInstance(cell))
-				return;
-			
-			if (UnityEditor.PrefabUtility.IsPartOfPrefabAsset(cell) && cell.m_ID != instanceID)
-				m_ID = GetInstanceID();
-			
-			if (UnityEditor.PrefabUtility.IsPartOfVariantPrefab(cell) && cell.m_ID != instanceID)
-				m_ID = GetInstanceID();
-		};
-	}
-	#endif
-
-	public virtual void Setup(Level _Level)
-	{
-		m_Level = _Level;
-		
-		if (m_Level == null)
-		{
-			Debug.LogError("[GameCell] Setup failed. Level not found.");
+			Debug.LogError("[GameCell] Setup cell failed. Level not found.");
 			return;
 		}
 		
-		m_Position = m_Level.GetGridPosition(this);
+		Stage     = _Stage;
+		LayerType = _LayerType;
+		Position  = _Position;
 		
-		transform.position = m_Level.GetWorldPosition(this);
+		transform.position = Stage.GetWorldPosition(Position, LayerType);
 	}
 
 	public virtual void Show(Action _Finished = null)
@@ -116,7 +83,7 @@ public abstract class GameCell : MonoBehaviour, IEquatable<GameCell>
 			return false;
 		if (ReferenceEquals(this, _Cell))
 			return true;
-		if (m_ID == _Cell.ID)
+		if (ID == _Cell.ID)
 			return true;
 		return base.Equals(_Cell);
 	}

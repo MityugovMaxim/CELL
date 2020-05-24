@@ -74,8 +74,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5614991774129016795, guid: 5740fe0e3729f43b4a7d897a186dc9b7,
         type: 3}
+      propertyPath: m_Cells.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5614991774129016795, guid: 5740fe0e3729f43b4a7d897a186dc9b7,
+        type: 3}
       propertyPath: m_ID
-      value: 20284
+      value: 24
       objectReference: {fileID: 0}
     - target: {fileID: 5614991774129016795, guid: 5740fe0e3729f43b4a7d897a186dc9b7,
         type: 3}
@@ -88,6 +93,12 @@ PrefabInstance:
       propertyPath: m_ColorCells.m_GameCellIDs.Array.data[0]
       value: 16858
       objectReference: {fileID: 0}
+    - target: {fileID: 5614991774129016795, guid: 5740fe0e3729f43b4a7d897a186dc9b7,
+        type: 3}
+      propertyPath: m_Cells.Array.data[0]
+      value: 
+      objectReference: {fileID: 146289968694242718, guid: 9ea60299e458d4611858da0833ecefb3,
+        type: 3}
     - target: {fileID: 9165872999155420030, guid: 5740fe0e3729f43b4a7d897a186dc9b7,
         type: 3}
       propertyPath: m_Name

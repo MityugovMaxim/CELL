@@ -37,5 +37,5 @@ MonoBehaviour:
   m_CanChangeZPosition: 0
   m_GameCells:
   - {fileID: 5075599315150622858, guid: 7965c1a34f34f481a856306401f28a50, type: 3}
-  m_LayerIndex: 3
+  m_LayerType: 2
   m_CellIndex: 0

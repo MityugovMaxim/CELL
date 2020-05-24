@@ -41,5 +41,5 @@ MonoBehaviour:
   - {fileID: 4149492179685456122, guid: e12a873e05e4044b8a29a2eb4b5f5a3f, type: 3}
   - {fileID: 4149492179685456122, guid: 28dcc949fdfc6447885d1340ecd67976, type: 3}
   - {fileID: 4149492179685456122, guid: a8ea053ebfbed4bf89017559abcd75da, type: 3}
-  m_LayerIndex: 1
+  m_LayerType: 1
   m_CellIndex: 1

@@ -15,21 +15,26 @@ public static class GameCellPool
 		CreateRoot();
 	}
 
-	public static GameCell Instantiate(GameCell _Cell, Vector3 _Position, Transform _Parent)
+	public static GameCell Instantiate(GameCell _Cell, Vector3 _Position, GameLayer _Layer)
 	{
 		if (_Cell == null)
+		{
+			Debug.LogError("[GameCellPool] Instantiate cell failed. Cell is null.");
 			return null;
+		}
 		
-		if (!Application.isPlaying)
-			return GameObject.Instantiate(_Cell, _Position, Quaternion.identity, _Parent);
+		if (_Layer == null)
+		{
+			Debug.LogError("[GameCellPool] Instantiate cell failed. Layer is null.");
+			return null;
+		}
 		
 		GameCell cell = GetCell(_Cell);
-		cell.transform.position = _Position;
-		cell.transform.rotation = Quaternion.identity;
-		cell.transform.SetParent(_Parent, true);
-		
-		if (_Parent != null)
-			cell.gameObject.layer = _Parent.gameObject.layer;
+		Transform cellTransform = cell.transform;
+		cellTransform.position = _Position;
+		cellTransform.rotation = Quaternion.identity;
+		cellTransform.SetParent(_Layer.transform, true);
+		cell.gameObject.SetLayer(_Layer.gameObject.layer);
 		
 		return cell;
 	}
@@ -39,18 +44,12 @@ public static class GameCellPool
 		if (_Cell == null)
 			return;
 		
-		if (!Application.isPlaying)
-		{
-			GameObject.Destroy(_Cell.gameObject);
-			return;
-		}
-		
 		if (!m_Pool.ContainsKey(_Cell.ID) || m_Pool[_Cell.ID] == null)
 			m_Pool[_Cell.ID] = new Queue<GameCell>();
 		
 		_Cell.transform.SetParent(m_Root);
 		
-		_Cell.gameObject.layer = m_Root.gameObject.layer;
+		_Cell.gameObject.SetLayer(m_Root.gameObject.layer);
 		
 		m_Pool[_Cell.ID].Enqueue(_Cell);
 	}
@@ -61,8 +60,8 @@ public static class GameCellPool
 			return;
 		
 		GameObject rootObject = new GameObject("game_cell_pool");
-		rootObject.layer     = LayerMask.NameToLayer("Hidden");
-		rootObject.hideFlags = HideFlags.HideInHierarchy;
+		//rootObject.hideFlags = HideFlags.HideInHierarchy;
+		rootObject.layer = LayerMask.NameToLayer("Hidden");
 		m_Root               = rootObject.transform;
 	}
 

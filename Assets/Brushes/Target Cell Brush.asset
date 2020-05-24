@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66b64e9ce5464ef6952db28b4a20c91f, type: 3}
-  m_Name: Swap Cell Brush
+  m_Name: Target Cell Brush
   m_EditorClassIdentifier: 
   m_Cells:
-  - m_Tile: {fileID: 11400000, guid: 1a4fb1a8f072d4d2a91b227c38852f5e, type: 2}
+  - m_Tile: {fileID: 0}
     m_Matrix:
       e00: 1
       e01: 0
@@ -31,15 +31,15 @@ MonoBehaviour:
       e31: 0
       e32: 0
       e33: 1
-    m_Color: {r: 0.3019608, g: 0.76862746, b: 0.67058825, a: 1}
+    m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Size: {x: 1, y: 1, z: 1}
   m_Pivot: {x: 0, y: 0, z: 0}
   m_CanChangeZPosition: 0
   m_GameCells:
-  - {fileID: 4149492179685456122, guid: f3efeacc1591d4fe19d235b079b43c01, type: 3}
-  - {fileID: 4149492179685456122, guid: 7fe145c78246549dcb7ad311f5515566, type: 3}
-  - {fileID: 4149492179685456122, guid: e12a873e05e4044b8a29a2eb4b5f5a3f, type: 3}
-  - {fileID: 4149492179685456122, guid: 28dcc949fdfc6447885d1340ecd67976, type: 3}
-  - {fileID: 4149492179685456122, guid: a8ea053ebfbed4bf89017559abcd75da, type: 3}
-  m_LayerIndex: 1
-  m_CellIndex: 1
+  - {fileID: 2935737791920050943, guid: 402b92d25aeda4d15a8f546355d73fd5, type: 3}
+  - {fileID: 2935737791920050943, guid: def0c091127b84b8b8f448f73a02ab3d, type: 3}
+  - {fileID: 2935737791920050943, guid: a945f4684688b4975a5dfbac83ebb122, type: 3}
+  - {fileID: 2935737791920050943, guid: 5fb3ae0c03e0f406993f2ddf3440aa6e, type: 3}
+  - {fileID: 2935737791920050943, guid: 83592fbe79e5e47beac31cd0f0558b5f, type: 3}
+  m_LayerType: 3
+  m_CellIndex: 3

@@ -45,9 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b126cf4f9b44a8c84f402551b6d77dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ID: 16016
-  m_Level: {fileID: 0}
-  m_Position: {x: 0, y: 0, z: 0}
+  m_ID: 7
   m_ColorCell: {fileID: 0}
 --- !u!95 &82947509581737648
 Animator:

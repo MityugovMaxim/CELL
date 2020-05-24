@@ -358,21 +358,15 @@ public class HexRuleTile : TileBase
 		for (var i = 0; i < HexUtility.NeighborsCount; i++)
 		{
 			Vector3Int position = HexUtility.GetNeighborPosition(_Position, i);
-			if (ContainsThis(position, _Tilemap))
+			if (IsNeighbor(position, _Tilemap))
 				_Tilemap.RefreshTile(position);
 		}
 	}
 
-	bool ContainsThis(Vector3Int _Position, ITilemap _Tilemap)
+	bool IsNeighbor(Vector3Int _Position, ITilemap _Tilemap)
 	{
 		TileBase tile = _Tilemap.GetTile(_Position);
 		return tile != null && tile == this;
-	}
-
-	bool ContainsOther(Vector3Int _Position, ITilemap _Tilemap)
-	{
-		TileBase tile = _Tilemap.GetTile(_Position);
-		return tile != null && tile != this;
 	}
 
 	bool MatchRule(Rule _Rule, Vector3Int _Position, ITilemap _Tilemap, out int _Rotation)

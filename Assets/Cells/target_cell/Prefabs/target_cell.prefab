@@ -209,12 +209,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f0be67b491e4936bb62e9ebc1b02fab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ID: 16078
-  m_Level: {fileID: 0}
-  m_Position: {x: 0, y: 0, z: 0}
-  m_CellRegistry:
+  m_ID: 19
+  m_ColorCells:
     m_GameCellIDs: 
-  m_ColorCells: []
 --- !u!95 &1971014806922733638
 Animator:
   serializedVersion: 3

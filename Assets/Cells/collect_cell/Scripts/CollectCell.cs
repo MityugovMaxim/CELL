@@ -11,9 +11,9 @@ public class CollectCell : GameCell
 	Action m_RestoreFinished;
 	Action m_CollectFinished;
 
-	public override void Setup(Level _Level)
+	public override void Setup(GameStage _Stage, GameLayerType _LayerType, Vector3Int _Position)
 	{
-		base.Setup(_Level);
+		base.Setup(_Stage, _LayerType, _Position);
 		
 		StateBehaviour.AddStateBehaviour(Animator, m_RestoreStateID);
 		StateBehaviour.SetCompleteStateListener(Animator, m_RestoreStateID, InvokeRestoreFinished);
@@ -38,18 +38,7 @@ public class CollectCell : GameCell
 
 	public override void Sample(Action _Finished = null)
 	{
-		GameCell colorCell = Level.GetColorCell(Position);
-		
-		if (colorCell == null)
-		{
-			if (_Finished != null)
-				_Finished();
-			return;
-		}
-		
-		Level.CompleteCondition(Position);
-		
-		if (!gameObject.activeInHierarchy)
+		if (!gameObject.activeInHierarchy || !Stage.ContainsCell(Position, GameLayerType.Color))
 		{
 			if (_Finished != null)
 				_Finished();

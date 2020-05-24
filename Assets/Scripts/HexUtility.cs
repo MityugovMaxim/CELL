@@ -5,7 +5,7 @@ using UnityEngine;
 
 public static class HexUtility
 {
-	public struct HexNeighborEnumerator : IEnumerator<Vector3Int>, IEnumerator, IDisposable
+	public struct HexNeighborEnumerator : IEnumerator<Vector3Int>
 	{
 		public Vector3Int Current => GetNeighborPosition(m_Position, m_Current);
 

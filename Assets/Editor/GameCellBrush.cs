@@ -8,16 +8,22 @@ using UnityEngine.Tilemaps;
 [CustomGridBrush(false, true, false, "Game Cell Brush")]
 public class GameCellBrush : GridBrush
 {
-	[SerializeField] GameCell[] m_GameCells = default;
+	[SerializeField] GameCell[]    m_GameCells = default;
+	[SerializeField] GameLayerType m_LayerType = default;
 
-	[SerializeField, HideInInspector] int m_LayerIndex = default;
-	[SerializeField, HideInInspector] int m_CellIndex  = default;
+	[SerializeField, HideInInspector] int m_CellIndex = default;
 
-	static GameCell GetGameCell(GridLayout _Grid, Transform _Layer, Vector3Int _Position)
+	GameCell GetGameCell(GridLayout _Grid, Vector3Int _Position)
 	{
-		for (int i = 0; i < _Layer.childCount; i++)
+		GameLayer layer = GetLayer(_Grid);
+		
+		if (layer == null)
+			return null;
+		
+		Transform layerTransform = layer.transform;
+		for (int i = 0; i < layerTransform.childCount; i++)
 		{
-			GameCell cell = _Layer.GetChild(i).GetComponent<GameCell>();
+			GameCell cell = layerTransform.GetChild(i).GetComponent<GameCell>();
 			
 			if (cell == null || cell.gameObject.CompareTag("EditorOnly"))
 				continue;
@@ -30,11 +36,24 @@ public class GameCellBrush : GridBrush
 		return null;
 	}
 
-	static bool ContainsCell(GridLayout _Grid, Transform _Layer, Vector3Int _Position, GameCell _Cell)
+	bool ContainsGround(GridLayout _Grid, Vector3Int _Position)
 	{
-		for (int i = 0; i < _Layer.childCount; i++)
+		GameLayer layer = GetLayer(_Grid);
+		
+		return layer != null && layer.ContainsGround(_Position);
+	}
+
+	bool ContainsCell(GridLayout _Grid, Vector3Int _Position)
+	{
+		GameLayer layer = GetLayer(_Grid);
+		
+		if (layer == null)
+			return false;
+		
+		Transform layerTransform = layer.transform;
+		for (int i = 0; i < layerTransform.childCount; i++)
 		{
-			GameCell cell = _Layer.GetChild(i).GetComponent<GameCell>();
+			GameCell cell = layerTransform.GetChild(i).GetComponent<GameCell>();
 			
 			if (cell == null || cell.gameObject.CompareTag("EditorOnly"))
 				continue;
@@ -52,52 +71,43 @@ public class GameCellBrush : GridBrush
 		if (m_GameCells == null || m_GameCells.Length == 0)
 			return;
 		
-		Tilemap tilemap = _Target.GetComponent<Tilemap>();
-		if (tilemap == null || !tilemap.HasTile(_Position))
-			return;
-		
-		Level level = _Grid.GetComponent<Level>();
-		
-		if (level == null)
+		if (!ContainsGround(_Grid, _Position))
 			return;
 		
 		m_CellIndex = Mathf.Clamp(m_CellIndex, 0, m_GameCells.Length - 1);
 		
 		GameCell cell = m_GameCells[m_CellIndex];
 		
-		Transform layer = GetLayer(_Grid);
-		
-		if (layer == null || ContainsCell(_Grid, layer, _Position, cell))
+		if (ContainsCell(_Grid, _Position))
 			return;
 		
-		GameCell instance = (GameCell)PrefabUtility.InstantiatePrefab(cell, layer);
+		GameLayer layer = GetLayer(_Grid);
+		
+		GameCell instance = (GameCell)PrefabUtility.InstantiatePrefab(cell, layer != null ? layer.transform : null);
 		
 		Undo.RegisterCreatedObjectUndo(instance.gameObject, "Paint Game Cells");
 		
-		instance.transform.position = _Grid.CellToWorld(_Position);
-		instance.transform.rotation = Quaternion.identity;
-		
-		level.SetupDefaultCells();
+		Transform transform = instance.transform;
+		transform.position = _Grid.CellToWorld(_Position);
+		transform.rotation = Quaternion.identity;
 	}
 
-	public Transform GetLayer(GridLayout _Grid)
+	GameLayer GetLayer(GridLayout _Grid)
 	{
 		if (_Grid == null)
 			return null;
 		
-		return _Grid.transform.GetChild(m_LayerIndex);
+		GameStage stage = _Grid.GetComponent<GameStage>();
+		
+		if (stage == null)
+			return null;
+		
+		return stage.GetLayer(m_LayerType);
 	}
 
 	public override void Erase(GridLayout _Grid, GameObject _Target, Vector3Int _Position)
 	{
-		Level level = _Grid.GetComponent<Level>();
-		
-		if (level == null)
-			return;
-		
-		Transform layer = GetLayer(_Grid);
-		
-		GameCell cell = GetGameCell(_Grid, layer, _Position);
+		GameCell cell = GetGameCell(_Grid, _Position);
 		
 		if (cell != null)
 			Undo.DestroyObjectImmediate(cell.gameObject);
@@ -106,11 +116,13 @@ public class GameCellBrush : GridBrush
 	[CustomEditor(typeof(GameCellBrush))]
 	public class GameCellBrushEditor : GridBrushEditor
 	{
+		static readonly Dictionary<GameCell, Texture2D> m_Thumbnails = new Dictionary<GameCell, Texture2D>();
+
+		GameCell m_Preview;
+
 		public override void OnInspectorGUI()
 		{
 			base.OnInspectorGUI();
-			
-			DrawLayers();
 			
 			DrawCells();
 			
@@ -119,92 +131,68 @@ public class GameCellBrush : GridBrush
 
 		void DrawCells()
 		{
+			if (Event.current.type == EventType.DragPerform)
+				return;
+			
 			SerializedProperty cellsProperty     = serializedObject.FindProperty("m_GameCells");
 			SerializedProperty cellIndexProperty = serializedObject.FindProperty("m_CellIndex");
 			
-			List<Texture2D> cells = new List<Texture2D>();
+			int colCount = 8;
+			int rowCount = Mathf.CeilToInt((float)cellsProperty.arraySize / colCount);
+			
+			Rect view = GUILayoutUtility.GetAspectRect((float)colCount / rowCount);
+			
+			float width  = view.width / colCount;
+			float height = view.height / rowCount;
 			
 			for (int i = 0; i < cellsProperty.arraySize; i++)
 			{
 				SerializedProperty cellProperty = cellsProperty.GetArrayElementAtIndex(i);
+				
+				if (cellProperty == null)
+					continue;
 				
 				GameCell cell = cellProperty.objectReferenceValue as GameCell;
 				
 				if (cell == null)
 					continue;
 				
-				cells.Add(AssetPreview.GetAssetPreview(cell.gameObject));
-			}
-			
-			if (Event.current.type == EventType.DragPerform)
-				return;
-			
-			const int lineCapacity = 8;
-			int linesCount = Mathf.CeilToInt((float)cells.Count / lineCapacity);
-			for (int i = 0; i < linesCount; i++)
-			{
-				Rect lineRect = GUILayoutUtility.GetAspectRect(lineCapacity / 1.0f);
-				float width = lineRect.width / lineCapacity;
-				for (int j = 0; j < lineCapacity && j < cells.Count - i * lineCapacity; j++)
+				int x = i % colCount;
+				int y = i / colCount;
+				
+				Rect rect = new Rect(
+					view.x + width * x,
+					view.y + height * y,
+					width,
+					height
+				);
+				
+				GUI.DrawTexture(rect, GetThumbnail(cell));
+				
+				if (GUI.Button(rect, GUIContent.none, GUIStyle.none))
+					cellIndexProperty.intValue = i;
+				
+				if (cellIndexProperty.intValue == i)
 				{
-					int index = i * lineCapacity + j;
-					
-					Rect cellRect = new Rect(
-						lineRect.x + width * j,
-						lineRect.y,
-						width,
-						lineRect.height
+					Handles.DrawSolidRectangleWithOutline(
+						new RectOffset(2, 2, 2, 2).Remove(rect),
+						Color.clear,
+						 new Color(0.34f, 0.61f, 0.84f)
 					);
-					
-					cellRect = cellRect.Fit(1, new Vector2(0.5f, 0.5f));
-					
-					if (cells[index] == null)
-						continue;
-					
-					EditorGUI.DrawTextureTransparent(cellRect, cells[index], ScaleMode.ScaleToFit);
-					
-					if (cellIndexProperty.intValue == index)
-					{
-						Handles.DrawSolidRectangleWithOutline(
-							new RectOffset(2, 2, 2, 2).Remove(cellRect),
-							Color.clear,
-							new Color(0.34f, 0.61f, 0.84f)
-						);
-					}
-					
-					if (GUI.Button(cellRect, GUIContent.none, GUIStyle.none))
-						cellIndexProperty.intValue = index;
 				}
 			}
 		}
 
-		void DrawLayers()
+		static Texture2D GetThumbnail(GameCell _Cell)
 		{
-			SerializedProperty layerIndexProperty = serializedObject.FindProperty("m_LayerIndex");
+			if (_Cell == null)
+				return null;
 			
-			List<string> layers = new List<string>();
-			foreach (GameObject gameObject in validTargets)
-			{
-				Tilemap tilemap = gameObject.GetComponent<Tilemap>();
-				if (tilemap == null)
-					continue;
-				
-				GridLayout grid = tilemap.layoutGrid;
-				if (grid == null)
-					continue;
-				
-				Level level = grid.GetComponent<Level>();
-				if (level == null)
-					continue;
-				
-				foreach(Transform layer in level.transform)
-					layers.Add(layer.name);
-			}
+			if (!m_Thumbnails.ContainsKey(_Cell))
+				m_Thumbnails[_Cell] = AssetPreview.GetAssetPreview(_Cell.gameObject);
 			
-			layerIndexProperty.intValue = EditorGUILayout.Popup("Layer", layerIndexProperty.intValue, layers.ToArray());
+			return m_Thumbnails[_Cell];
 		}
-
-		GameCell m_Preview;
 
 		public override void ClearPreview()
 		{
@@ -218,9 +206,9 @@ public class GameCellBrush : GridBrush
 			if (m_Preview != null)
 				return;
 			
-			SerializedProperty cellsProperty    = serializedObject.FindProperty("m_GameCells");
-			SerializedProperty layerProperty    = serializedObject.FindProperty("m_LayerIndex");
-			SerializedProperty selectedProperty = serializedObject.FindProperty("m_CellIndex");
+			SerializedProperty cellsProperty     = serializedObject.FindProperty("m_GameCells");
+			SerializedProperty layerTypeProperty = serializedObject.FindProperty("m_LayerType");
+			SerializedProperty cellIndexProperty = serializedObject.FindProperty("m_CellIndex");
 			
 			Tilemap tilemap = _Grid.GetComponent<Tilemap>();
 			if (tilemap == null || !tilemap.HasTile(_Position))
@@ -230,15 +218,15 @@ public class GameCellBrush : GridBrush
 			if (grid == null)
 				return;
 			
-			Level level = grid.GetComponent<Level>();
-			if (level == null)
+			GameStage stage = grid.GetComponent<GameStage>();
+			if (stage == null)
 				return;
 			
-			Transform layer = level.transform.GetChild(layerProperty.intValue);
+			GameLayer layer = stage.GetLayer((GameLayerType)layerTypeProperty.enumValueIndex);
 			if (layer == null)
 				return;
 			
-			SerializedProperty cellProperty = cellsProperty.GetArrayElementAtIndex(selectedProperty.intValue);
+			SerializedProperty cellProperty = cellsProperty.GetArrayElementAtIndex(cellIndexProperty.intValue);
 			
 			GameCell cell = cellProperty.objectReferenceValue as GameCell;
 			
@@ -249,7 +237,7 @@ public class GameCellBrush : GridBrush
 				cell,
 				_Grid.CellToWorld(_Position),
 				Quaternion.identity,
-				layer
+				layer.transform
 			);
 			m_Preview.tag = "EditorOnly";
 			m_Preview.gameObject.hideFlags = HideFlags.HideAndDontSave;

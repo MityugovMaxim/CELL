@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 public class TargetCell : GameCell
@@ -10,15 +11,15 @@ public class TargetCell : GameCell
 	static readonly int m_CompleteParameterID = Animator.StringToHash("Complete");
 	static readonly int m_FailParameterID     = Animator.StringToHash("Fail");
 
-	[SerializeField] GameCellRegistry m_ColorCells = default;
+	[SerializeField] GameCell[] m_Cells = default;
 
 	Action m_RestoreFinished;
 	Action m_CompleteFinished;
 	Action m_FailFinished;
 
-	public override void Setup(Level _Level)
+	public override void Setup(GameStage _Stage, GameLayerType _LayerType, Vector3Int _Position)
 	{
-		base.Setup(_Level);
+		base.Setup(_Stage, _LayerType, _Position);
 		
 		StateBehaviour.AddStateBehaviour(Animator, m_RestoreStateID);
 		StateBehaviour.SetCompleteStateListener(Animator, m_RestoreStateID, InvokeRestoreFinished);
@@ -49,21 +50,21 @@ public class TargetCell : GameCell
 
 	public override void Sample(Action _Finished = null)
 	{
-		GameCell colorCell = Level.GetColorCell(Position);
-		
-		if (colorCell == null)
+		if (!Stage.ContainsCell(Position, GameLayerType.Color))
 		{
 			if (_Finished != null)
 				_Finished();
 			return;
 		}
 		
-		bool complete = m_ColorCells.Contains(colorCell);
+		GameCell cell = Stage.GetCell(Position, GameLayerType.Color);
+		
+		bool complete = m_Cells.Contains(cell);
 		
 		if (complete)
-			Level.CompleteCondition(Position);
+			Stage.CompleteTask(Position, LayerType);
 		else
-			Level.FailCondition(Position);
+			Stage.FailTask(Position, LayerType);
 		
 		if (!gameObject.activeInHierarchy)
 		{

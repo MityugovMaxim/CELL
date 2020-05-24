@@ -126,9 +126,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78d04de2217a4bd9a358d6ae05af1046, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_ID: 16130
-  m_Level: {fileID: 0}
-  m_Position: {x: 0, y: 0, z: 0}
+  m_ID: 13
   m_ColorCell: {fileID: 0}
 --- !u!95 &8437127172593644004
 Animator:

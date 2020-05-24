@@ -18,9 +18,9 @@ public class ColorCell : GameCell
 	Action m_RestoreFinished;
 	Action m_SampleFinished;
 
-	public override void Setup(Level _Level)
+	public override void Setup(GameStage _Stage, GameLayerType _LayerType, Vector3Int _Position)
 	{
-		base.Setup(_Level);
+		base.Setup(_Stage, _LayerType, _Position);
 		
 		StateBehaviour.AddStateBehaviour(Animator, m_ShowStateID);
 		StateBehaviour.SetCompleteStateListener(Animator, m_ShowStateID, InvokeShowFinished);
@@ -85,16 +85,18 @@ public class ColorCell : GameCell
 		int count = 0;
 		foreach (Vector3Int position in HexUtility.GetNeighborPositions(Position))
 		{
-			if (!Level.ContainsGround(position))
+			if (Stage == null)
+				Debug.LogError("stage", gameObject);
+			
+			if (!Stage.ContainsGround(position, LayerType))
 				continue;
 			
-			GameCell colorCell = Level.GetColorCell(position);
-			
-			if (colorCell != null)
+			if (Stage.ContainsCell(position, LayerType))
 				continue;
 			
-			Level.AddColorCell(position, m_ColorCell);
-			Level.ExecuteCell(position);
+			Stage.AddCell(position, m_ColorCell, LayerType);
+			
+			Stage.ExecuteCell(position);
 			
 			count++;
 		}

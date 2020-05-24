@@ -273,7 +273,7 @@ public class ElementPanel : UIBehaviour
 		
 		for (int i = 0; i < transform.childCount; i++)
 		{
-			ElementContainer container = transform.GetChild(i).GetComponent<ElementContainer>();;
+			ElementContainer container = transform.GetChild(i).GetComponent<ElementContainer>();
 			
 			if (container == null || container.IsDestroying() || container.IsDestroyed())
 				continue;

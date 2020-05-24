@@ -10,9 +10,9 @@ public class SwapCell : GameCell
 
 	Action m_SampleFinished;
 
-	public override void Setup(Level _Level)
+	public override void Setup(GameStage _Stage, GameLayerType _LayerType, Vector3Int _Position)
 	{
-		base.Setup(_Level);
+		base.Setup(_Stage, _LayerType, _Position);
 		
 		StateBehaviour.AddStateBehaviour(Animator, m_SampleStateID);
 		StateBehaviour.SetCompleteStateListener(Animator, m_SampleStateID, InvokeSampleFinished);
@@ -20,17 +20,15 @@ public class SwapCell : GameCell
 
 	public override void Sample(Action _Finished = null)
 	{
-		GameCell colorCell = Level.GetColorCell(Position);
-		
-		if (!gameObject.activeInHierarchy || colorCell == null)
+		if (!gameObject.activeInHierarchy || !Stage.ContainsCell(Position, GameLayerType.Color))
 		{
 			if (_Finished != null)
 				_Finished();
 			return;
 		}
 		
-		Level.RemoveColorCell(Position);
-		Level.AddColorCell(Position, m_ColorCell);
+		Stage.RemoveCell(Position, GameLayerType.Color);
+		Stage.AddCell(Position, m_ColorCell, GameLayerType.Color);
 		
 		m_SampleFinished = _Finished;
 		
